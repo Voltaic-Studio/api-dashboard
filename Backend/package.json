@@ -2,7 +2,8 @@
   "name": "api-dashboard-backend",
   "version": "1.0.0",
   "scripts": {
-    "scrape": "tsx scripts/scrape-apis.ts"
+    "scrape": "tsx scripts/scrape-apis.ts",
+    "fetch-logos": "tsx scripts/fetch-logos.ts"
   },
   "dependencies": {
     "axios": "^1.6.0",
