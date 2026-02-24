@@ -1,11 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #1d1d1f;
-  --accent: #FF9500; /* Apple-ish Orange */
+  --accent: #FF9500;
   --muted: #f5f5f7;
   --border: #d2d2d7;
 }
@@ -26,12 +24,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-@layer utilities {
-  .apple-blur {
-    @apply backdrop-blur-xl bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:bg-white/60;
+@utility apple-blur {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background-color: rgb(255 255 255 / 0.8);
+
+  @media (prefers-color-scheme: dark) {
+    background-color: rgb(0 0 0 / 0.8);
   }
-  
-  .text-balance {
-    text-wrap: balance;
+
+  @supports (backdrop-filter: blur(1px)) {
+    background-color: rgb(255 255 255 / 0.6);
+
+    @media (prefers-color-scheme: dark) {
+      background-color: rgb(0 0 0 / 0.6);
+    }
   }
+}
+
+@utility text-balance {
+  text-wrap: balance;
 }
