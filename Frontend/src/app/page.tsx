@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/components/ui/navbar';
 import { SearchSection } from '@/components/ui/search-section';
 import { FloatingLogo } from '@/components/ui/floating-logo';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient, type Api, type Brand } from '@/lib/supabase';
 
 export const metadata: Metadata = {
   title: 'ApiFlora — Developer API Marketplace',
@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
-// Well-known APIs to surface on the homepage first
 const FEATURED_IDS = [
   'stripe.com', 'twilio.com', 'github.com', 'slack.com',
   'sendgrid.com', 'spotify.com', 'twitter.com', 'paypal.com',
@@ -20,19 +19,40 @@ const FEATURED_IDS = [
 
 const PAGE_SIZE = 24;
 
+function groupByBrand(apis: Api[]): Brand[] {
+  const groups = new Map<string, Api[]>();
+  for (const api of apis) {
+    const base = api.id.split(':')[0];
+    if (!groups.has(base)) groups.set(base, []);
+    groups.get(base)!.push(api);
+  }
+  return Array.from(groups.entries()).map(([domain, entries]) => {
+    const primary = entries.find(e => e.id === domain) ?? entries[0];
+    return {
+      id: domain,
+      title: primary.title,
+      description: primary.description,
+      logo: entries.find(e => e.logo)?.logo ?? null,
+      website: primary.website,
+      api_count: entries.length,
+    };
+  });
+}
+
 export default async function Home() {
   const supabase = createServerClient();
 
-  // Fetch a larger pool, reorder to put well-known APIs first
   const { data: pool } = await supabase
     .from('apis')
     .select('*')
-    .limit(100);
+    .limit(500);
+
+  const allBrands = groupByBrand(pool ?? []);
 
   const featuredSet = new Set(FEATURED_IDS);
-  const featured = (pool ?? []).filter(a => featuredSet.has(a.id));
-  const rest     = (pool ?? []).filter(a => !featuredSet.has(a.id));
-  const initialApis = [...featured, ...rest].slice(0, PAGE_SIZE);
+  const featured = allBrands.filter(b => featuredSet.has(b.id));
+  const rest     = allBrands.filter(b => !featuredSet.has(b.id));
+  const initialBrands = [...featured, ...rest].slice(0, PAGE_SIZE);
 
   return (
     <main className="min-h-screen pt-32">
@@ -45,7 +65,7 @@ export default async function Home() {
         </p>
       </section>
 
-      <SearchSection initialApis={initialApis} initialPage={1} />
+      <SearchSection initialBrands={initialBrands} initialPage={1} />
     </main>
   );
 }

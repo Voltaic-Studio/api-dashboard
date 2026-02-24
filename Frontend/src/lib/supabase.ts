@@ -10,6 +10,15 @@ export type Api = {
   updated: string | null;
 };
 
+export type Brand = {
+  id: string;
+  title: string;
+  description: string | null;
+  logo: string | null;
+  website: string | null;
+  api_count: number;
+};
+
 /**
  * Server-side Supabase client.
  * Called in Server Components and API routes only — never imported in 'use client' files.

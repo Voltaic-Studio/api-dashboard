@@ -3,11 +3,11 @@
 import { Search as SearchIcon, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import type { Api } from '@/lib/supabase';
+import type { Brand } from '@/lib/supabase';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
-  suggestions?: Api[];
+  suggestions?: Brand[];
 }
 
 export function SearchBar({ onSearch, suggestions = [] }: SearchBarProps) {

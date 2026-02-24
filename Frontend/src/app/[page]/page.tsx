@@ -3,12 +3,32 @@ import { notFound } from 'next/navigation';
 import { Navbar } from '@/components/ui/navbar';
 import { SearchSection } from '@/components/ui/search-section';
 import { FloatingLogo } from '@/components/ui/floating-logo';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient, type Api, type Brand } from '@/lib/supabase';
 
 const PAGE_SIZE = 24;
 
 interface Props {
   params: Promise<{ page: string }>;
+}
+
+function groupByBrand(apis: Api[]): Brand[] {
+  const groups = new Map<string, Api[]>();
+  for (const api of apis) {
+    const base = api.id.split(':')[0];
+    if (!groups.has(base)) groups.set(base, []);
+    groups.get(base)!.push(api);
+  }
+  return Array.from(groups.entries()).map(([domain, entries]) => {
+    const primary = entries.find(e => e.id === domain) ?? entries[0];
+    return {
+      id: domain,
+      title: primary.title,
+      description: primary.description,
+      logo: entries.find(e => e.logo)?.logo ?? null,
+      website: primary.website,
+      api_count: entries.length,
+    };
+  });
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -29,14 +49,15 @@ export default async function PaginatedPage({ params }: Props) {
   if (isNaN(pageNum) || pageNum < 2) notFound();
 
   const supabase = createServerClient();
-  const offset = (pageNum - 1) * PAGE_SIZE;
+  const offset = (pageNum - 1) * PAGE_SIZE * 3;
 
-  const { data: initialApis } = await supabase
+  const { data } = await supabase
     .from('apis')
     .select('*')
-    .range(offset, offset + PAGE_SIZE - 1);
+    .range(offset, offset + PAGE_SIZE * 5 - 1);
 
-  if (!initialApis || initialApis.length === 0) notFound();
+  const brands = groupByBrand(data ?? []).slice(0, PAGE_SIZE);
+  if (brands.length === 0) notFound();
 
   return (
     <main className="min-h-screen pt-32">
@@ -49,7 +70,7 @@ export default async function PaginatedPage({ params }: Props) {
         </p>
       </section>
 
-      <SearchSection initialApis={initialApis} initialPage={pageNum} />
+      <SearchSection initialBrands={brands} initialPage={pageNum} />
     </main>
   );
 }

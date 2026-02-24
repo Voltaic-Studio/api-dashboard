@@ -3,30 +3,31 @@
 import { useState, useEffect, useRef } from 'react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { ApiGrid } from '@/components/ui/api-grid';
-import type { Api } from '@/lib/supabase';
+import type { Brand } from '@/lib/supabase';
 
 const PAGE_SIZE = 24;
 
 interface SearchSectionProps {
-  initialApis: Api[];
+  initialBrands: Brand[];
   initialPage: number;
 }
 
-export function SearchSection({ initialApis, initialPage }: SearchSectionProps) {
-  const [query, setQuery]         = useState('');
-  const [apis, setApis]           = useState<Api[]>(initialApis);
-  const [loading, setLoading]     = useState(false);
+export function SearchSection({ initialBrands, initialPage }: SearchSectionProps) {
+  const [query, setQuery]             = useState('');
+  const [brands, setBrands]           = useState<Brand[]>(initialBrands);
+  const [resultCount, setResultCount] = useState<number | null>(null);
+  const [loading, setLoading]         = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [nextPage, setNextPage]   = useState(initialPage + 1);
-  const [hasMore, setHasMore]     = useState(initialApis.length === PAGE_SIZE);
+  const [nextPage, setNextPage]       = useState(initialPage + 1);
+  const [hasMore, setHasMore]         = useState(initialBrands.length === PAGE_SIZE);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Search with debounce
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (!query.trim()) {
-      setApis(initialApis);
+      setBrands(initialBrands);
+      setResultCount(null);
       setLoading(false);
       return;
     }
@@ -35,24 +36,25 @@ export function SearchSection({ initialApis, initialPage }: SearchSectionProps) 
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/apis?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        setApis(data);
+        const json = await res.json();
+        setBrands(json.brands ?? []);
+        setResultCount(json.count ?? 0);
       } finally {
         setLoading(false);
       }
     }, 250);
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query, initialApis]);
+  }, [query, initialBrands]);
 
   async function loadMore() {
     setLoadingMore(true);
     try {
       const res  = await fetch(`/api/apis?page=${nextPage}`);
-      const data: Api[] = await res.json();
-      setApis(prev => [...prev, ...data]);
-      setHasMore(data.length === PAGE_SIZE);
-      // Update URL to reflect how deep the user has loaded (no new history entry)
+      const json = await res.json();
+      const newBrands: Brand[] = json.brands ?? [];
+      setBrands(prev => [...prev, ...newBrands]);
+      setHasMore(newBrands.length === PAGE_SIZE);
       window.history.replaceState({}, '', nextPage === 1 ? '/' : `/${nextPage}`);
       setNextPage(p => p + 1);
     } finally {
@@ -65,10 +67,15 @@ export function SearchSection({ initialApis, initialPage }: SearchSectionProps) 
   return (
     <>
       <div className="mt-10 px-4">
-        <SearchBar onSearch={setQuery} suggestions={initialApis.slice(0, 5)} />
+        <SearchBar onSearch={setQuery} />
+        {resultCount !== null && isSearching && !loading && (
+          <p className="text-center text-sm text-[var(--foreground)]/50 mt-4 font-medium">
+            {resultCount} result{resultCount !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
 
-      <ApiGrid apis={apis} loading={loading} query={query} />
+      <ApiGrid brands={brands} loading={loading} query={query} />
 
       {!isSearching && hasMore && (
         <div className="flex justify-center pb-20 -mt-4">
