@@ -16,13 +16,19 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export const useTheme = () => useContext(ThemeContext);
 
-function getSystemDark() {
+function resolvesDark(theme: Theme) {
+  if (theme === 'dark') return true;
+  if (theme === 'light') return false;
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
 function applyClass(theme: Theme) {
-  const dark = theme === 'dark' || (theme === 'system' && getSystemDark());
-  document.documentElement.classList.toggle('dark', dark);
+  const dark = resolvesDark(theme);
+  if (dark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -49,22 +55,31 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       applyClass(next);
     };
 
-    if (event && 'startViewTransition' in document) {
-      const x = event.clientX;
-      const y = event.clientY;
-      const maxR = Math.hypot(
-        Math.max(x, innerWidth - x),
-        Math.max(y, innerHeight - y),
-      );
-
-      const t = (document as any).startViewTransition(commit);
-      t.ready.then(() => {
-        document.documentElement.animate(
-          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxR}px at ${x}px ${y}px)`] },
-          { duration: 500, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' },
+    try {
+      if (event && typeof (document as any).startViewTransition === 'function') {
+        const x = event.clientX;
+        const y = event.clientY;
+        const maxR = Math.hypot(
+          Math.max(x, innerWidth - x),
+          Math.max(y, innerHeight - y),
         );
-      });
-    } else {
+
+        const transition = (document as any).startViewTransition(() => {
+          commit();
+        });
+
+        transition.ready
+          .then(() => {
+            document.documentElement.animate(
+              { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxR}px at ${x}px ${y}px)`] },
+              { duration: 500, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' },
+            );
+          })
+          .catch(() => {});
+      } else {
+        commit();
+      }
+    } catch {
       commit();
     }
   }, []);

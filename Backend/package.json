@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "scripts": {
     "scrape": "tsx scripts/scrape-apis.ts",
-    "fetch-logos": "tsx scripts/fetch-logos.ts"
+    "seed": "tsx scripts/seed-supabase.ts",
+    "fetch-logos": "tsx scripts/fetch-logos.ts",
+    "push-algolia": "tsx scripts/push-algolia.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
     "axios": "^1.6.0",
     "fs-extra": "^11.1.0"
   },

@@ -3,12 +3,14 @@
 import { Search as SearchIcon, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import type { Api } from '@/lib/supabase';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  suggestions?: Api[];
 }
 
-export function SearchBar({ onSearch }: SearchBarProps) {
+export function SearchBar({ onSearch, suggestions = [] }: SearchBarProps) {
   const [focused, setFocused] = useState(false);
   const [value, setValue] = useState('');
 
@@ -17,9 +19,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     onSearch(e.target.value);
   }
 
-  function handleSuggestion(name: string) {
-    setValue(name);
-    onSearch(name);
+  function handleSuggestion(title: string) {
+    setValue(title);
+    onSearch(title);
     setFocused(false);
   }
 
@@ -47,7 +49,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         </button>
       </div>
 
-      {focused && !value && (
+      {focused && !value && suggestions.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -55,16 +57,20 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         >
           <div className="text-xs font-semibold text-[var(--foreground)]/50 uppercase tracking-wider mb-3">Suggested</div>
           <div className="space-y-2">
-            {['Stripe', 'OpenAI', 'Twilio', 'SendGrid'].map(api => (
+            {suggestions.map(api => (
               <div
-                key={api}
-                onMouseDown={() => handleSuggestion(api)}
+                key={api.id}
+                onMouseDown={() => handleSuggestion(api.title)}
                 className="flex items-center gap-3 p-2 hover:bg-[var(--muted)] rounded-lg cursor-pointer transition-colors"
               >
-                <div className="w-8 h-8 rounded bg-[var(--muted)] flex items-center justify-center">
-                  <span className="text-[10px] font-bold">{api[0]}</span>
+                <div className="w-8 h-8 rounded-lg bg-[var(--muted)] flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {api.logo ? (
+                    <img src={api.logo} alt={api.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-bold">{api.title[0]}</span>
+                  )}
                 </div>
-                <span className="text-sm font-medium">{api}</span>
+                <span className="text-sm font-medium truncate">{api.title}</span>
               </div>
             ))}
           </div>

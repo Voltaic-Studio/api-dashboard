@@ -1,90 +1,83 @@
 /**
  * fetch-logos.ts
  *
- * One-shot script: reads apis.json, fills in missing logos using logo.dev,
- * then writes the updated file back. Run once — results are cached in the JSON.
+ * One-shot script: finds every API in Supabase with a null logo, derives
+ * the domain from its id, builds a logo.dev URL and updates the row.
+ * Run once — results are persisted in the DB.
  *
  * Usage:
- *   1. Add your key to Backend/.env  →  LOGO_DEV_TOKEN=pk_...
+ *   1. Fill in Backend/.env  →  LOGO_DEV_TOKEN + SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
  *   2. cd Backend && npm run fetch-logos
  */
 
+import { createClient } from '@supabase/supabase-js';
 import fs from 'fs-extra';
 import path from 'path';
 
-const DATA_FILE = path.join(process.cwd(), '../Frontend/src/data/apis.json');
-
-function getLogoDevToken(): string {
-  // Minimal .env parser — avoids pulling in dotenv just for one value
+function loadEnv(): Record<string, string> {
   const envPath = path.join(process.cwd(), '.env');
-  if (fs.existsSync(envPath)) {
-    const lines = fs.readFileSync(envPath, 'utf-8').split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('LOGO_DEV_TOKEN=')) {
-        return trimmed.slice('LOGO_DEV_TOKEN='.length).trim();
-      }
-    }
+  const result: Record<string, string> = {};
+  if (!fs.existsSync(envPath)) return result;
+  for (const line of fs.readFileSync(envPath, 'utf-8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    result[trimmed.slice(0, eqIdx).trim()] = trimmed.slice(eqIdx + 1).trim();
   }
-  return process.env.LOGO_DEV_TOKEN ?? '';
+  return result;
 }
 
-/**
- * Extract a clean domain from the api id (e.g. "stripe.com:payment" → "stripe.com")
- * or fall back to parsing the website URL.
- */
-function extractDomain(id: string, website?: string): string | null {
-  // The api.guru id is usually just the domain (e.g. "1forge.com")
+function extractDomain(id: string, website?: string | null): string | null {
   const byId = id.split(':')[0].trim();
   if (byId && byId.includes('.')) return byId;
-
   if (website) {
-    try {
-      return new URL(website).hostname.replace(/^www\./, '');
-    } catch {
-      // ignore
-    }
+    try { return new URL(website).hostname.replace(/^www\./, ''); } catch { /* ignore */ }
   }
-
   return null;
 }
 
 async function fetchLogos() {
-  const token = getLogoDevToken();
-  if (!token) {
-    console.error('❌ LOGO_DEV_TOKEN is not set. Add it to Backend/.env and retry.');
-    process.exit(1);
-  }
+  const env = loadEnv();
+  const token = env.LOGO_DEV_TOKEN ?? process.env.LOGO_DEV_TOKEN ?? '';
+  const url   = env.SUPABASE_URL ?? process.env.SUPABASE_URL ?? '';
+  const key   = env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
-  console.log('📖 Reading apis.json...');
-  const apis: any[] = await fs.readJson(DATA_FILE);
+  if (!token) { console.error('❌ LOGO_DEV_TOKEN not set in Backend/.env'); process.exit(1); }
+  if (!url || !key) { console.error('❌ SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set in Backend/.env'); process.exit(1); }
 
-  const missing = apis.filter(api => !api.logo);
-  console.log(`🔍 Found ${missing.length} APIs without a logo (out of ${apis.length} total).`);
+  const supabase = createClient(url, key);
 
-  if (missing.length === 0) {
+  console.log('🔍 Fetching APIs with no logo from Supabase...');
+  const { data: missing, error } = await supabase
+    .from('apis')
+    .select('id, website')
+    .is('logo', null);
+
+  if (error) { console.error('❌', error.message); process.exit(1); }
+  console.log(`   ${missing?.length ?? 0} APIs without a logo.`);
+
+  if (!missing || missing.length === 0) {
     console.log('✅ All APIs already have logos. Nothing to do.');
     return;
   }
 
   let filled = 0;
-
-  for (const api of apis) {
-    if (api.logo) continue;
-
+  for (const api of missing) {
     const domain = extractDomain(api.id, api.website);
-    if (!domain) {
-      console.warn(`  ⚠️  Could not derive domain for ${api.id} — skipping`);
-      continue;
-    }
+    if (!domain) { console.warn(`  ⚠️  No domain for ${api.id} — skipping`); continue; }
 
-    // logo.dev publishable token is safe to embed in image URLs
-    api.logo = `https://img.logo.dev/${domain}?token=${token}&size=64&format=png`;
+    const logo = `https://img.logo.dev/${domain}?token=${token}&size=64&format=png`;
+    const { error: updateErr } = await supabase
+      .from('apis')
+      .update({ logo })
+      .eq('id', api.id);
+
+    if (updateErr) { console.warn(`  ⚠️  Failed to update ${api.id}: ${updateErr.message}`); continue; }
     filled++;
   }
 
-  await fs.writeJson(DATA_FILE, apis, { spaces: 2 });
-  console.log(`✅ Filled ${filled} logos. Updated ${DATA_FILE}`);
+  console.log(`✅ Updated ${filled} logo URLs in Supabase.`);
 }
 
 fetchLogos();

@@ -14,8 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "API Market",
-  description: "The definitive marketplace for developer APIs.",
+  metadataBase: new URL(
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000'
+  ),
+  title: {
+    default: 'ApiFlora — Developer API Marketplace',
+    template: '%s | ApiFlora',
+  },
+  description: 'Discover, test and integrate thousands of REST APIs in seconds. The definitive marketplace for developer tools.',
+  openGraph: {
+    siteName: 'ApiFlora',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 };
 
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})()`;
