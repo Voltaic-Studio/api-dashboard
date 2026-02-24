@@ -5,15 +5,20 @@
     "scrape": "tsx scripts/scrape-apis.ts",
     "seed": "tsx scripts/seed-supabase.ts",
     "fetch-logos": "tsx scripts/fetch-logos.ts",
-    "push-algolia": "tsx scripts/push-algolia.ts"
+    "push-algolia": "tsx scripts/push-algolia.ts",
+    "discover": "tsx scripts/discover-apis.ts",
+    "discover:postman": "tsx scripts/discover-postman.ts",
+    "scrape:endpoints": "tsx scripts/scrape-endpoints.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
     "axios": "^1.6.0",
-    "fs-extra": "^11.1.0"
+    "fs-extra": "^11.1.0",
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
