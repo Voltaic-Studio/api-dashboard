@@ -96,10 +96,6 @@
     "domain": "adobe.com"
   },
   {
-    "name": "Adobe",
-    "domain": "adobe.io"
-  },
-  {
     "name": "ADP",
     "domain": "adp.com"
   },
@@ -285,10 +281,6 @@
   },
   {
     "name": "Amazonaws",
-    "domain": "amazonaws.cn"
-  },
-  {
-    "name": "Amazonaws",
     "domain": "amazonaws.com"
   },
   {
@@ -358,10 +350,6 @@
   {
     "name": "Api",
     "domain": "api.video"
-  },
-  {
-    "name": "Api",
-    "domain": "api.stream"
   },
   {
     "name": "Api4",
@@ -657,10 +645,6 @@
   },
   {
     "name": "Azure",
-    "domain": "azure.cn"
-  },
-  {
-    "name": "Azure",
     "domain": "azure.com"
   },
   {
@@ -760,10 +744,6 @@
     "domain": "bigchange.com"
   },
   {
-    "name": "Bigcommerce",
-    "domain": "bigcommerce.sg"
-  },
-  {
     "name": "BigCommerce",
     "domain": "bigcommerce.com"
   },
@@ -789,19 +769,7 @@
   },
   {
     "name": "Binance",
-    "domain": "binance.us"
-  },
-  {
-    "name": "Binance",
     "domain": "binance.com"
-  },
-  {
-    "name": "Binance",
-    "domain": "binance.th"
-  },
-  {
-    "name": "Binance",
-    "domain": "binance.info"
   },
   {
     "name": "Bindbee",
@@ -878,10 +846,6 @@
   {
     "name": "Booking",
     "domain": "booking.com"
-  },
-  {
-    "name": "Box",
-    "domain": "box.dev"
   },
   {
     "name": "Box",
@@ -968,10 +932,6 @@
     "domain": "builder.io"
   },
   {
-    "name": "Builder",
-    "domain": "builder.ai"
-  },
-  {
     "name": "Buildkite",
     "domain": "buildkite.com"
   },
@@ -1022,10 +982,6 @@
   {
     "name": "Cake",
     "domain": "cake.ai"
-  },
-  {
-    "name": "Cal",
-    "domain": "cal.dev"
   },
   {
     "name": "Cal",
@@ -1080,10 +1036,6 @@
     "domain": "carapi.dev"
   },
   {
-    "name": "Carapi",
-    "domain": "carapi.app"
-  },
-  {
     "name": "Carapis",
     "domain": "carapis.com"
   },
@@ -1110,10 +1062,6 @@
   {
     "name": "Caruso Dataplace",
     "domain": "caruso-dataplace.com"
-  },
-  {
-    "name": "Caruso Dataplace",
-    "domain": "caruso-dataplace.de"
   },
   {
     "name": "Case",
@@ -1432,10 +1380,6 @@
     "domain": "co.jp"
   },
   {
-    "name": "Co",
-    "domain": "co.uk"
-  },
-  {
     "name": "CockroachDB",
     "domain": "cockroachlabs.com"
   },
@@ -1490,10 +1434,6 @@
   {
     "name": "Com",
     "domain": "com.au"
-  },
-  {
-    "name": "Com",
-    "domain": "com.np"
   },
   {
     "name": "Comcast",
@@ -1736,10 +1676,6 @@
     "domain": "daily.dev"
   },
   {
-    "name": "Daily",
-    "domain": "daily.co"
-  },
-  {
     "name": "Daloopa",
     "domain": "daloopa.com"
   },
@@ -1778,10 +1714,6 @@
   {
     "name": "Datadog",
     "domain": "datadog.com"
-  },
-  {
-    "name": "Datadog",
-    "domain": "datadoghq.com"
   },
   {
     "name": "Datamation",
@@ -1924,10 +1856,6 @@
     "domain": "dimo.org"
   },
   {
-    "name": "Dimo",
-    "domain": "dimo.zone"
-  },
-  {
     "name": "Discord",
     "domain": "discord.com"
   },
@@ -1941,7 +1869,7 @@
   },
   {
     "name": "Dixa",
-    "domain": "dixa.io"
+    "domain": "dixa.com"
   },
   {
     "name": "Dlvr",
@@ -2660,10 +2588,6 @@
     "domain": "freshdesk.com"
   },
   {
-    "name": "Freshdesk",
-    "domain": "freshworks.com"
-  },
-  {
     "name": "Freshservice",
     "domain": "freshservice.com"
   },
@@ -2808,10 +2732,6 @@
     "domain": "gladly.com"
   },
   {
-    "name": "Gladly",
-    "domain": "gladly.ai"
-  },
-  {
     "name": "Globalpayments",
     "domain": "globalpayments.com"
   },
@@ -2860,10 +2780,6 @@
     "domain": "gov.uk"
   },
   {
-    "name": "Gov",
-    "domain": "gov.sg"
-  },
-  {
     "name": "Govinfo",
     "domain": "govinfo.gov"
   },
@@ -2904,10 +2820,6 @@
     "domain": "greenhouse.com"
   },
   {
-    "name": "Greenhouse",
-    "domain": "greenhouse.io"
-  },
-  {
     "name": "Greenrobot",
     "domain": "greenrobot.org"
   },
@@ -2942,10 +2854,6 @@
   {
     "name": "Growthbook",
     "domain": "growthbook.com"
-  },
-  {
-    "name": "Growthbook",
-    "domain": "growthbook.io"
   },
   {
     "name": "Growthfolks",
@@ -3150,18 +3058,6 @@
   {
     "name": "Hubspot",
     "domain": "hubspot.com"
-  },
-  {
-    "name": "Hubspot",
-    "domain": "hubspot.de"
-  },
-  {
-    "name": "Hubspot",
-    "domain": "hubspot.jp"
-  },
-  {
-    "name": "Hubspot",
-    "domain": "hubspot.fr"
   },
   {
     "name": "Hugging Face",
@@ -3397,10 +3293,6 @@
   },
   {
     "name": "Intercom",
-    "domain": "intercom.help"
-  },
-  {
-    "name": "Intercom",
     "domain": "intercom.com"
   },
   {
@@ -3529,7 +3421,7 @@
   },
   {
     "name": "Jumio",
-    "domain": "jumio.ai"
+    "domain": "jumio.com"
   },
   {
     "name": "June",
@@ -3809,14 +3701,6 @@
   },
   {
     "name": "Lightspeed",
-    "domain": "lightspeed.run"
-  },
-  {
-    "name": "Lightspeed",
-    "domain": "lightspeed.app"
-  },
-  {
-    "name": "Lightspeed",
     "domain": "lightspeedhq.com"
   },
   {
@@ -3864,10 +3748,6 @@
     "domain": "llm.surf"
   },
   {
-    "name": "Llm",
-    "domain": "llm.garden"
-  },
-  {
     "name": "Llm Explorer",
     "domain": "llm-explorer.com"
   },
@@ -3878,10 +3758,6 @@
   {
     "name": "Llmapi",
     "domain": "llmapi.dev"
-  },
-  {
-    "name": "Llmapi",
-    "domain": "llmapi.net"
   },
   {
     "name": "Llmasaservice",
@@ -3938,6 +3814,10 @@
   {
     "name": "LogRocket",
     "domain": "logrocket.com"
+  },
+  {
+    "name": "Lovable",
+    "domain": "https://docs.lovable.dev/"
   },
   {
     "name": "Lqhl",
@@ -4160,10 +4040,6 @@
     "domain": "mintlify.app"
   },
   {
-    "name": "Mintlify",
-    "domain": "mintlify.me"
-  },
-  {
     "name": "Mintlify Auth Docs",
     "domain": "mintlify-auth-docs.com"
   },
@@ -4365,10 +4241,6 @@
   },
   {
     "name": "Netlify",
-    "domain": "netlify.app"
-  },
-  {
-    "name": "Netlify",
     "domain": "netlify.com"
   },
   {
@@ -4414,10 +4286,6 @@
   {
     "name": "Nist",
     "domain": "nist.gov"
-  },
-  {
-    "name": "Nist",
-    "domain": "nist.rip"
   },
   {
     "name": "Niva",
@@ -4556,10 +4424,6 @@
     "domain": "open-meteo.com"
   },
   {
-    "name": "Open Meteo",
-    "domain": "open-meteo.org"
-  },
-  {
     "name": "OpenAI",
     "domain": "openai.com"
   },
@@ -4598,6 +4462,10 @@
   {
     "name": "Opencv",
     "domain": "opencv.org"
+  },
+  {
+    "name": "Openclaw",
+    "domain": "docs.openclaw.ai"
   },
   {
     "name": "Opendoor",
@@ -4674,10 +4542,6 @@
   {
     "name": "Opentracing",
     "domain": "opentracing.io"
-  },
-  {
-    "name": "Openweathermap",
-    "domain": "openweathermap.org"
   },
   {
     "name": "Openweathermap",
@@ -4962,10 +4826,6 @@
   {
     "name": "Precisely",
     "domain": "precisely.com"
-  },
-  {
-    "name": "Precisely",
-    "domain": "precisely.se"
   },
   {
     "name": "Predicthq",
@@ -5269,10 +5129,6 @@
   },
   {
     "name": "Rev",
-    "domain": "rev.ai"
-  },
-  {
-    "name": "Rev",
     "domain": "rev.com"
   },
   {
@@ -5488,10 +5344,6 @@
     "domain": "searchapi.io"
   },
   {
-    "name": "Searchapi",
-    "domain": "searchapi.org"
-  },
-  {
     "name": "Seatmap",
     "domain": "seatmap.pro"
   },
@@ -5538,10 +5390,6 @@
   {
     "name": "Serverless",
     "domain": "serverless.com"
-  },
-  {
-    "name": "Serverless",
-    "domain": "serverless.business"
   },
   {
     "name": "Serverwatch",
@@ -5592,10 +5440,6 @@
     "domain": "goshippo.com"
   },
   {
-    "name": "Shippo",
-    "domain": "shippo.com"
-  },
-  {
     "name": "ShipStation",
     "domain": "shipstation.com"
   },
@@ -5606,10 +5450,6 @@
   {
     "name": "Shopify",
     "domain": "shopify.com"
-  },
-  {
-    "name": "Shopify",
-    "domain": "shopify.dev"
   },
   {
     "name": "Shopifycloud",
@@ -5682,10 +5522,6 @@
   {
     "name": "Skyscanner",
     "domain": "skyscanner.net"
-  },
-  {
-    "name": "Skyscanner",
-    "domain": "skyscanner.ru"
   },
   {
     "name": "Slack",
@@ -5892,10 +5728,6 @@
     "domain": "statsig.com"
   },
   {
-    "name": "Statsig",
-    "domain": "statsig.io"
-  },
-  {
     "name": "Stayntouch",
     "domain": "stayntouch.com"
   },
@@ -5954,10 +5786,6 @@
   {
     "name": "Stripe",
     "domain": "stripe.com"
-  },
-  {
-    "name": "Stripe",
-    "domain": "stripe.global"
   },
   {
     "name": "Strongdm",
@@ -6269,10 +6097,6 @@
   },
   {
     "name": "Tooljet",
-    "domain": "tooljet.ai"
-  },
-  {
-    "name": "Tooljet",
     "domain": "tooljet.com"
   },
   {
@@ -6322,10 +6146,6 @@
   {
     "name": "Travelport",
     "domain": "travelport.com"
-  },
-  {
-    "name": "Travelport",
-    "domain": "travelport.mn"
   },
   {
     "name": "Travelroam",
@@ -6525,10 +6345,6 @@
   },
   {
     "name": "Valyu",
-    "domain": "valyu.network"
-  },
-  {
-    "name": "Valyu",
     "domain": "valyu.ai"
   },
   {
@@ -6573,15 +6389,7 @@
   },
   {
     "name": "Vercel",
-    "domain": "vercel.app"
-  },
-  {
-    "name": "Vercel",
     "domain": "vercel.com"
-  },
-  {
-    "name": "Vercel",
-    "domain": "vercel.ai"
   },
   {
     "name": "Veridion",
@@ -6730,10 +6538,6 @@
   {
     "name": "Watttime",
     "domain": "watttime.org"
-  },
-  {
-    "name": "Weather",
-    "domain": "weather.gov"
   },
   {
     "name": "Weather",
@@ -7045,15 +6849,7 @@
   },
   {
     "name": "Zoho",
-    "domain": "zoho.eu"
-  },
-  {
-    "name": "Zoho",
     "domain": "zoho.com"
-  },
-  {
-    "name": "Zoho",
-    "domain": "zoho.in"
   },
   {
     "name": "Zohoapis",
@@ -7098,5 +6894,1413 @@
   {
     "name": "Zyte",
     "domain": "zyte.com"
+  },
+  {
+    "name": "Facebook",
+    "domain": "facebook.com"
+  },
+  {
+    "name": "Instagram",
+    "domain": "instagram.com"
+  },
+  {
+    "name": "TikTok",
+    "domain": "tiktok.com"
+  },
+  {
+    "name": "Reddit",
+    "domain": "reddit.com"
+  },
+  {
+    "name": "YouTube",
+    "domain": "youtube.com"
+  },
+  {
+    "name": "Twitch",
+    "domain": "twitch.tv"
+  },
+  {
+    "name": "Spotify",
+    "domain": "spotify.com"
+  },
+  {
+    "name": "SoundCloud",
+    "domain": "soundcloud.com"
+  },
+  {
+    "name": "Pinterest",
+    "domain": "pinterest.com"
+  },
+  {
+    "name": "Snapchat",
+    "domain": "snapchat.com"
+  },
+  {
+    "name": "Mastodon",
+    "domain": "mastodon.social"
+  },
+  {
+    "name": "Bluesky",
+    "domain": "bsky.app"
+  },
+  {
+    "name": "Threads",
+    "domain": "threads.net"
+  },
+  {
+    "name": "Loom",
+    "domain": "loom.com"
+  },
+  {
+    "name": "Figma",
+    "domain": "figma.com"
+  },
+  {
+    "name": "Miro",
+    "domain": "miro.com"
+  },
+  {
+    "name": "Canva",
+    "domain": "canva.com"
+  },
+  {
+    "name": "Basecamp",
+    "domain": "basecamp.com"
+  },
+  {
+    "name": "Trello",
+    "domain": "trello.com"
+  },
+  {
+    "name": "Height",
+    "domain": "height.app"
+  },
+  {
+    "name": "Todoist",
+    "domain": "todoist.com"
+  },
+  {
+    "name": "Obsidian",
+    "domain": "obsidian.md"
+  },
+  {
+    "name": "Roam Research",
+    "domain": "roamresearch.com"
+  },
+  {
+    "name": "Craft",
+    "domain": "craft.do"
+  },
+  {
+    "name": "Confluence",
+    "domain": "confluence.atlassian.com"
+  },
+  {
+    "name": "Vimeo",
+    "domain": "vimeo.com"
+  },
+  {
+    "name": "Wistia",
+    "domain": "wistia.com"
+  },
+  {
+    "name": "Bunny.net",
+    "domain": "bunny.net"
+  },
+  {
+    "name": "Dailymotion",
+    "domain": "dailymotion.com"
+  },
+  {
+    "name": "Vidyard",
+    "domain": "vidyard.com"
+  },
+  {
+    "name": "Brightcove",
+    "domain": "brightcove.com"
+  },
+  {
+    "name": "JW Player",
+    "domain": "jwplayer.com"
+  },
+  {
+    "name": "PayPal",
+    "domain": "paypal.com"
+  },
+  {
+    "name": "Klarna",
+    "domain": "klarna.com"
+  },
+  {
+    "name": "Affirm",
+    "domain": "affirm.com"
+  },
+  {
+    "name": "Mollie",
+    "domain": "mollie.com"
+  },
+  {
+    "name": "Razorpay",
+    "domain": "razorpay.com"
+  },
+  {
+    "name": "Paytm",
+    "domain": "paytm.com"
+  },
+  {
+    "name": "Cashfree",
+    "domain": "cashfree.com"
+  },
+  {
+    "name": "PayStack",
+    "domain": "paystack.com"
+  },
+  {
+    "name": "Flutterwave",
+    "domain": "flutterwave.com"
+  },
+  {
+    "name": "Starling Bank",
+    "domain": "starlingbank.com"
+  },
+  {
+    "name": "Nuvei",
+    "domain": "nuvei.com"
+  },
+  {
+    "name": "Spreedly",
+    "domain": "spreedly.com"
+  },
+  {
+    "name": "Xendit",
+    "domain": "xendit.co"
+  },
+  {
+    "name": "dLocal",
+    "domain": "dlocal.com"
+  },
+  {
+    "name": "Rapyd",
+    "domain": "rapyd.net"
+  },
+  {
+    "name": "Mercadopago",
+    "domain": "mercadopago.com"
+  },
+  {
+    "name": "Paysafe",
+    "domain": "paysafe.com"
+  },
+  {
+    "name": "Finicity",
+    "domain": "finicity.com"
+  },
+  {
+    "name": "Basiq",
+    "domain": "basiq.io"
+  },
+  {
+    "name": "Klaviyo",
+    "domain": "klaviyo.com"
+  },
+  {
+    "name": "Brevo",
+    "domain": "brevo.com"
+  },
+  {
+    "name": "Customer.io",
+    "domain": "customer.io"
+  },
+  {
+    "name": "Braze",
+    "domain": "braze.com"
+  },
+  {
+    "name": "Iterable",
+    "domain": "iterable.com"
+  },
+  {
+    "name": "Omnisend",
+    "domain": "omnisend.com"
+  },
+  {
+    "name": "Drip",
+    "domain": "drip.com"
+  },
+  {
+    "name": "ConvertKit",
+    "domain": "convertkit.com"
+  },
+  {
+    "name": "AWeber",
+    "domain": "aweber.com"
+  },
+  {
+    "name": "GetResponse",
+    "domain": "getresponse.com"
+  },
+  {
+    "name": "Constant Contact",
+    "domain": "constantcontact.com"
+  },
+  {
+    "name": "Moosend",
+    "domain": "moosend.com"
+  },
+  {
+    "name": "Beehiiv",
+    "domain": "beehiiv.com"
+  },
+  {
+    "name": "Ghost",
+    "domain": "ghost.org"
+  },
+  {
+    "name": "Heap",
+    "domain": "heap.io"
+  },
+  {
+    "name": "FullStory",
+    "domain": "fullstory.com"
+  },
+  {
+    "name": "Hotjar",
+    "domain": "hotjar.com"
+  },
+  {
+    "name": "Plausible",
+    "domain": "plausible.io"
+  },
+  {
+    "name": "Fathom Analytics",
+    "domain": "usefathom.com"
+  },
+  {
+    "name": "Umami",
+    "domain": "umami.is"
+  },
+  {
+    "name": "Matomo",
+    "domain": "matomo.org"
+  },
+  {
+    "name": "Woopra",
+    "domain": "woopra.com"
+  },
+  {
+    "name": "Kissmetrics",
+    "domain": "kissmetrics.io"
+  },
+  {
+    "name": "Chartbeat",
+    "domain": "chartbeat.com"
+  },
+  {
+    "name": "Pendo",
+    "domain": "pendo.io"
+  },
+  {
+    "name": "AppDynamics",
+    "domain": "appdynamics.com"
+  },
+  {
+    "name": "Fal.ai",
+    "domain": "fal.ai"
+  },
+  {
+    "name": "Modal",
+    "domain": "modal.com"
+  },
+  {
+    "name": "Cerebras",
+    "domain": "cerebras.ai"
+  },
+  {
+    "name": "xAI",
+    "domain": "x.ai"
+  },
+  {
+    "name": "Tavus",
+    "domain": "tavus.io"
+  },
+  {
+    "name": "Pika Labs",
+    "domain": "pika.art"
+  },
+  {
+    "name": "Kling AI",
+    "domain": "klingai.com"
+  },
+  {
+    "name": "Luma AI",
+    "domain": "lumalabs.ai"
+  },
+  {
+    "name": "Ideogram",
+    "domain": "ideogram.ai"
+  },
+  {
+    "name": "Murf AI",
+    "domain": "murf.ai"
+  },
+  {
+    "name": "Resemble AI",
+    "domain": "resemble.ai"
+  },
+  {
+    "name": "Descript",
+    "domain": "descript.com"
+  },
+  {
+    "name": "Otter.ai",
+    "domain": "otter.ai"
+  },
+  {
+    "name": "Jina AI",
+    "domain": "jina.ai"
+  },
+  {
+    "name": "Segmind",
+    "domain": "segmind.com"
+  },
+  {
+    "name": "Novita AI",
+    "domain": "novita.ai"
+  },
+  {
+    "name": "Close CRM",
+    "domain": "close.com"
+  },
+  {
+    "name": "Copper CRM",
+    "domain": "copper.com"
+  },
+  {
+    "name": "Streak CRM",
+    "domain": "streak.com"
+  },
+  {
+    "name": "Affinity CRM",
+    "domain": "affinity.co"
+  },
+  {
+    "name": "Attio",
+    "domain": "attio.com"
+  },
+  {
+    "name": "Twenty CRM",
+    "domain": "twenty.com"
+  },
+  {
+    "name": "Folk CRM",
+    "domain": "folk.app"
+  },
+  {
+    "name": "Nutshell",
+    "domain": "nutshell.com"
+  },
+  {
+    "name": "Insightly",
+    "domain": "insightly.com"
+  },
+  {
+    "name": "SugarCRM",
+    "domain": "sugarcrm.com"
+  },
+  {
+    "name": "Nimble CRM",
+    "domain": "nimble.com"
+  },
+  {
+    "name": "Crisp",
+    "domain": "crisp.chat"
+  },
+  {
+    "name": "Tidio",
+    "domain": "tidio.com"
+  },
+  {
+    "name": "LiveChat",
+    "domain": "livechat.com"
+  },
+  {
+    "name": "Drift",
+    "domain": "drift.com"
+  },
+  {
+    "name": "PrestaShop",
+    "domain": "prestashop.com"
+  },
+  {
+    "name": "Squarespace",
+    "domain": "squarespace.com"
+  },
+  {
+    "name": "Ecwid",
+    "domain": "ecwid.com"
+  },
+  {
+    "name": "Papaya Global",
+    "domain": "papayaglobal.com"
+  },
+  {
+    "name": "Leapsome",
+    "domain": "leapsome.com"
+  },
+  {
+    "name": "UKG",
+    "domain": "ukg.com"
+  },
+  {
+    "name": "Recruitee",
+    "domain": "recruitee.com"
+  },
+  {
+    "name": "Turso",
+    "domain": "turso.tech"
+  },
+  {
+    "name": "Timescale",
+    "domain": "timescale.com"
+  },
+  {
+    "name": "InfluxDB",
+    "domain": "influxdata.com"
+  },
+  {
+    "name": "ClickHouse",
+    "domain": "clickhouse.com"
+  },
+  {
+    "name": "Snowflake",
+    "domain": "snowflake.com"
+  },
+  {
+    "name": "Databricks",
+    "domain": "databricks.com"
+  },
+  {
+    "name": "dbt Labs",
+    "domain": "getdbt.com"
+  },
+  {
+    "name": "Airbyte",
+    "domain": "airbyte.com"
+  },
+  {
+    "name": "Census",
+    "domain": "getcensus.com"
+  },
+  {
+    "name": "Hightouch",
+    "domain": "hightouch.com"
+  },
+  {
+    "name": "Metabase",
+    "domain": "metabase.com"
+  },
+  {
+    "name": "Looker",
+    "domain": "looker.com"
+  },
+  {
+    "name": "Tableau",
+    "domain": "tableau.com"
+  },
+  {
+    "name": "Retool",
+    "domain": "retool.com"
+  },
+  {
+    "name": "Appsmith",
+    "domain": "appsmith.com"
+  },
+  {
+    "name": "Budibase",
+    "domain": "budibase.com"
+  },
+  {
+    "name": "Directus",
+    "domain": "directus.io"
+  },
+  {
+    "name": "Sanity",
+    "domain": "sanity.io"
+  },
+  {
+    "name": "DatoCMS",
+    "domain": "datocms.com"
+  },
+  {
+    "name": "Prismic",
+    "domain": "prismic.io"
+  },
+  {
+    "name": "Supertokens",
+    "domain": "supertokens.com"
+  },
+  {
+    "name": "Ory",
+    "domain": "ory.sh"
+  },
+  {
+    "name": "PropelAuth",
+    "domain": "propelauth.com"
+  },
+  {
+    "name": "Descope",
+    "domain": "descope.com"
+  },
+  {
+    "name": "Hanko",
+    "domain": "hanko.io"
+  },
+  {
+    "name": "Magic.link",
+    "domain": "magic.link"
+  },
+  {
+    "name": "Permit.io",
+    "domain": "permit.io"
+  },
+  {
+    "name": "Cerbos",
+    "domain": "cerbos.dev"
+  },
+  {
+    "name": "Pangea",
+    "domain": "pangea.cloud"
+  },
+  {
+    "name": "ClickSend",
+    "domain": "clicksend.com"
+  },
+  {
+    "name": "SparkPost",
+    "domain": "sparkpost.com"
+  },
+  {
+    "name": "Mailjet",
+    "domain": "mailjet.com"
+  },
+  {
+    "name": "Elastic Email",
+    "domain": "elasticemail.com"
+  },
+  {
+    "name": "Loops",
+    "domain": "loops.so"
+  },
+  {
+    "name": "Novu",
+    "domain": "novu.co"
+  },
+  {
+    "name": "MagicBell",
+    "domain": "magicbell.com"
+  },
+  {
+    "name": "Expo",
+    "domain": "expo.dev"
+  },
+  {
+    "name": "PubNub",
+    "domain": "pubnub.com"
+  },
+  {
+    "name": "BrowserStack",
+    "domain": "browserstack.com"
+  },
+  {
+    "name": "LambdaTest",
+    "domain": "lambdatest.com"
+  },
+  {
+    "name": "Cypress",
+    "domain": "cypress.io"
+  },
+  {
+    "name": "Percy",
+    "domain": "percy.io"
+  },
+  {
+    "name": "Checkly",
+    "domain": "checklyhq.com"
+  },
+  {
+    "name": "CrowdStrike",
+    "domain": "crowdstrike.com"
+  },
+  {
+    "name": "SentinelOne",
+    "domain": "sentinelone.com"
+  },
+  {
+    "name": "Wiz",
+    "domain": "wiz.io"
+  },
+  {
+    "name": "Snyk",
+    "domain": "snyk.io"
+  },
+  {
+    "name": "Veracode",
+    "domain": "veracode.com"
+  },
+  {
+    "name": "GitGuardian",
+    "domain": "gitguardian.com"
+  },
+  {
+    "name": "Shodan",
+    "domain": "shodan.io"
+  },
+  {
+    "name": "VirusTotal",
+    "domain": "virustotal.com"
+  },
+  {
+    "name": "SecurityTrails",
+    "domain": "securitytrails.com"
+  },
+  {
+    "name": "Have I Been Pwned",
+    "domain": "haveibeenpwned.com"
+  },
+  {
+    "name": "LocationIQ",
+    "domain": "locationiq.com"
+  },
+  {
+    "name": "OpenCage",
+    "domain": "opencagedata.com"
+  },
+  {
+    "name": "What3Words",
+    "domain": "what3words.com"
+  },
+  {
+    "name": "SmartyStreets",
+    "domain": "smarty.com"
+  },
+  {
+    "name": "Grubhub",
+    "domain": "grubhub.com"
+  },
+  {
+    "name": "Yelp",
+    "domain": "yelp.com"
+  },
+  {
+    "name": "TripAdvisor",
+    "domain": "tripadvisor.com"
+  },
+  {
+    "name": "OpenTable",
+    "domain": "opentable.com"
+  },
+  {
+    "name": "Airbnb",
+    "domain": "airbnb.com"
+  },
+  {
+    "name": "Viator",
+    "domain": "viator.com"
+  },
+  {
+    "name": "GetYourGuide",
+    "domain": "getyourguide.com"
+  },
+  {
+    "name": "Rome2Rio",
+    "domain": "rome2rio.com"
+  },
+  {
+    "name": "Fitbit",
+    "domain": "fitbit.com"
+  },
+  {
+    "name": "Strava",
+    "domain": "strava.com"
+  },
+  {
+    "name": "Oura Ring",
+    "domain": "ouraring.com"
+  },
+  {
+    "name": "Dexcom",
+    "domain": "dexcom.com"
+  },
+  {
+    "name": "Alpaca",
+    "domain": "alpaca.markets"
+  },
+  {
+    "name": "Bybit",
+    "domain": "bybit.com"
+  },
+  {
+    "name": "Dune Analytics",
+    "domain": "dune.com"
+  },
+  {
+    "name": "Glassnode",
+    "domain": "glassnode.com"
+  },
+  {
+    "name": "Tiingo",
+    "domain": "tiingo.com"
+  },
+  {
+    "name": "Twelve Data",
+    "domain": "twelvedata.com"
+  },
+  {
+    "name": "Open Exchange Rates",
+    "domain": "openexchangerates.org"
+  },
+  {
+    "name": "Fixer.io",
+    "domain": "fixer.io"
+  },
+  {
+    "name": "ExchangeRate-API",
+    "domain": "exchangerate-api.com"
+  },
+  {
+    "name": "DocuSign",
+    "domain": "docusign.com"
+  },
+  {
+    "name": "HelloSign",
+    "domain": "hellosign.com"
+  },
+  {
+    "name": "PandaDoc",
+    "domain": "pandadoc.com"
+  },
+  {
+    "name": "Clio",
+    "domain": "clio.com"
+  },
+  {
+    "name": "Persona",
+    "domain": "withpersona.com"
+  },
+  {
+    "name": "Alloy",
+    "domain": "alloy.com"
+  },
+  {
+    "name": "Coursera",
+    "domain": "coursera.org"
+  },
+  {
+    "name": "Udemy",
+    "domain": "udemy.com"
+  },
+  {
+    "name": "edX",
+    "domain": "edx.org"
+  },
+  {
+    "name": "Khan Academy",
+    "domain": "khanacademy.org"
+  },
+  {
+    "name": "Duolingo",
+    "domain": "duolingo.com"
+  },
+  {
+    "name": "Quizlet",
+    "domain": "quizlet.com"
+  },
+  {
+    "name": "Kahoot",
+    "domain": "kahoot.com"
+  },
+  {
+    "name": "Canvas LMS",
+    "domain": "instructure.com"
+  },
+  {
+    "name": "Teachable",
+    "domain": "teachable.com"
+  },
+  {
+    "name": "Kajabi",
+    "domain": "kajabi.com"
+  },
+  {
+    "name": "Thinkific",
+    "domain": "thinkific.com"
+  },
+  {
+    "name": "Realtor.com",
+    "domain": "realtor.com"
+  },
+  {
+    "name": "CoStar",
+    "domain": "costar.com"
+  },
+  {
+    "name": "Buildium",
+    "domain": "buildium.com"
+  },
+  {
+    "name": "AppFolio",
+    "domain": "appfolio.com"
+  },
+  {
+    "name": "QuickBooks",
+    "domain": "quickbooks.com"
+  },
+  {
+    "name": "Xero",
+    "domain": "xero.com"
+  },
+  {
+    "name": "FreshBooks",
+    "domain": "freshbooks.com"
+  },
+  {
+    "name": "Wave",
+    "domain": "waveapps.com"
+  },
+  {
+    "name": "Zoho Books",
+    "domain": "zohopublic.com"
+  },
+  {
+    "name": "Tipalti",
+    "domain": "tipalti.com"
+  },
+  {
+    "name": "Criteo",
+    "domain": "criteo.com"
+  },
+  {
+    "name": "The Trade Desk",
+    "domain": "thetradedesk.com"
+  },
+  {
+    "name": "AppLovin",
+    "domain": "applovin.com"
+  },
+  {
+    "name": "AdRoll",
+    "domain": "adroll.com"
+  },
+  {
+    "name": "IronSource",
+    "domain": "is.com"
+  },
+  {
+    "name": "SEMrush",
+    "domain": "semrush.com"
+  },
+  {
+    "name": "Moz",
+    "domain": "moz.com"
+  },
+  {
+    "name": "Majestic",
+    "domain": "majestic.com"
+  },
+  {
+    "name": "Clearscope",
+    "domain": "clearscope.io"
+  },
+  {
+    "name": "Surfer SEO",
+    "domain": "surferseo.com"
+  },
+  {
+    "name": "Botify",
+    "domain": "botify.com"
+  },
+  {
+    "name": "SurveyMonkey",
+    "domain": "surveymonkey.com"
+  },
+  {
+    "name": "Formstack",
+    "domain": "formstack.com"
+  },
+  {
+    "name": "Qualtrics",
+    "domain": "qualtrics.com"
+  },
+  {
+    "name": "Fillout",
+    "domain": "fillout.com"
+  },
+  {
+    "name": "Steam",
+    "domain": "store.steampowered.com"
+  },
+  {
+    "name": "Epic Games",
+    "domain": "epicgames.com"
+  },
+  {
+    "name": "Riot Games",
+    "domain": "developer.riotgames.com"
+  },
+  {
+    "name": "GameAnalytics",
+    "domain": "gameanalytics.com"
+  },
+  {
+    "name": "PlayFab",
+    "domain": "playfab.com"
+  },
+  {
+    "name": "Overwolf",
+    "domain": "overwolf.com"
+  },
+  {
+    "name": "GoDaddy",
+    "domain": "godaddy.com"
+  },
+  {
+    "name": "Namecheap",
+    "domain": "namecheap.com"
+  },
+  {
+    "name": "DNSimple",
+    "domain": "dnsimple.com"
+  },
+  {
+    "name": "WhoisXML",
+    "domain": "whoisxmlapi.com"
+  },
+  {
+    "name": "NeverBounce",
+    "domain": "neverbounce.com"
+  },
+  {
+    "name": "ZeroBounce",
+    "domain": "zerobounce.net"
+  },
+  {
+    "name": "Kickbox",
+    "domain": "kickbox.com"
+  },
+  {
+    "name": "AirVisual",
+    "domain": "iqair.com"
+  },
+  {
+    "name": "NewsAPI",
+    "domain": "newsapi.org"
+  },
+  {
+    "name": "GDELT Project",
+    "domain": "gdeltproject.org"
+  },
+  {
+    "name": "ipinfo.io",
+    "domain": "ipinfo.io"
+  },
+  {
+    "name": "MaxMind",
+    "domain": "maxmind.com"
+  },
+  {
+    "name": "ipstack",
+    "domain": "ipstack.com"
+  },
+  {
+    "name": "IPQualityScore",
+    "domain": "ipqualityscore.com"
+  },
+  {
+    "name": "URLScan",
+    "domain": "urlscan.io"
+  },
+  {
+    "name": "TMDB",
+    "domain": "themoviedb.org"
+  },
+  {
+    "name": "TVDB",
+    "domain": "thetvdb.com"
+  },
+  {
+    "name": "Trakt.tv",
+    "domain": "trakt.tv"
+  },
+  {
+    "name": "Last.fm",
+    "domain": "last.fm"
+  },
+  {
+    "name": "MusicBrainz",
+    "domain": "musicbrainz.org"
+  },
+  {
+    "name": "Discogs",
+    "domain": "discogs.com"
+  },
+  {
+    "name": "Deezer",
+    "domain": "developers.deezer.com"
+  },
+  {
+    "name": "TIDAL",
+    "domain": "developer.tidal.com"
+  },
+  {
+    "name": "Make",
+    "domain": "make.com"
+  },
+  {
+    "name": "n8n",
+    "domain": "n8n.io"
+  },
+  {
+    "name": "Tray.io",
+    "domain": "tray.io"
+  },
+  {
+    "name": "Pipedream",
+    "domain": "pipedream.com"
+  },
+  {
+    "name": "Activepieces",
+    "domain": "activepieces.com"
+  },
+  {
+    "name": "Acuity Scheduling",
+    "domain": "acuityscheduling.com"
+  },
+  {
+    "name": "Chili Piper",
+    "domain": "chilipiper.com"
+  },
+  {
+    "name": "SavvyCal",
+    "domain": "savvycal.com"
+  },
+  {
+    "name": "Vectara",
+    "domain": "vectara.com"
+  },
+  {
+    "name": "Marqo",
+    "domain": "marqo.ai"
+  },
+  {
+    "name": "Trieve",
+    "domain": "trieve.ai"
+  },
+  {
+    "name": "Portkey AI",
+    "domain": "portkey.ai"
+  },
+  {
+    "name": "OpenRouter",
+    "domain": "openrouter.ai"
+  },
+  {
+    "name": "Braintrust",
+    "domain": "braintrust.dev"
+  },
+  {
+    "name": "Langfuse",
+    "domain": "langfuse.com"
+  },
+  {
+    "name": "AgentOps",
+    "domain": "agentops.ai"
+  },
+  {
+    "name": "Mem0",
+    "domain": "mem0.ai"
+  },
+  {
+    "name": "Composio",
+    "domain": "composio.dev"
+  },
+  {
+    "name": "Readme.io",
+    "domain": "readme.com"
+  },
+  {
+    "name": "Redocly",
+    "domain": "redocly.com"
+  },
+  {
+    "name": "Better Uptime",
+    "domain": "betteruptime.com"
+  },
+  {
+    "name": "UptimeRobot",
+    "domain": "uptimerobot.com"
+  },
+  {
+    "name": "Pingdom",
+    "domain": "pingdom.com"
+  },
+  {
+    "name": "Rootly",
+    "domain": "rootly.com"
+  },
+  {
+    "name": "FireHydrant",
+    "domain": "firehydrant.com"
+  },
+  {
+    "name": "Webflow",
+    "domain": "webflow.com"
+  },
+  {
+    "name": "Bubble",
+    "domain": "bubble.io"
+  },
+  {
+    "name": "Framer",
+    "domain": "framer.com"
+  },
+  {
+    "name": "WeTransfer",
+    "domain": "wetransfer.com"
+  },
+  {
+    "name": "Dropbox",
+    "domain": "dropbox.com"
+  },
+  {
+    "name": "Docusign CLM",
+    "domain": "springcm.com"
+  },
+  {
+    "name": "Evernote",
+    "domain": "evernote.com"
+  },
+  {
+    "name": "Bear",
+    "domain": "bear.app"
+  },
+  {
+    "name": "Notion Calendar",
+    "domain": "cron.com"
+  },
+  {
+    "name": "Superhuman",
+    "domain": "superhuman.com"
+  },
+  {
+    "name": "Hey",
+    "domain": "hey.com"
+  },
+  {
+    "name": "Fastmail",
+    "domain": "fastmail.com"
+  },
+  {
+    "name": "ProtonMail",
+    "domain": "proton.me"
+  },
+  {
+    "name": "Tutanota",
+    "domain": "tutanota.com"
+  },
+  {
+    "name": "Spike Email",
+    "domain": "spikenow.com"
+  },
+  {
+    "name": "Missive",
+    "domain": "missiveapp.com"
+  },
+  {
+    "name": "Shortcut",
+    "domain": "shortcut.com"
+  },
+  {
+    "name": "Clubhouse",
+    "domain": "clubhouseapi.com"
+  },
+  {
+    "name": "Productboard",
+    "domain": "productboard.com"
+  },
+  {
+    "name": "Aha!",
+    "domain": "aha.io"
+  },
+  {
+    "name": "Roadmunk",
+    "domain": "roadmunk.com"
+  },
+  {
+    "name": "Mural",
+    "domain": "mural.co"
+  },
+  {
+    "name": "Lucidchart",
+    "domain": "lucidchart.com"
+  },
+  {
+    "name": "Draw.io",
+    "domain": "diagrams.net"
+  },
+  {
+    "name": "Whimsical",
+    "domain": "whimsical.com"
+  },
+  {
+    "name": "Balsamiq",
+    "domain": "balsamiq.com"
+  },
+  {
+    "name": "InVision",
+    "domain": "invisionapp.com"
+  },
+  {
+    "name": "Zeplin",
+    "domain": "zeplin.io"
+  },
+  {
+    "name": "Abstract",
+    "domain": "abstract.com"
+  },
+  {
+    "name": "Avocode",
+    "domain": "avocode.com"
+  },
+  {
+    "name": "Maze",
+    "domain": "maze.co"
+  },
+  {
+    "name": "UserTesting",
+    "domain": "usertesting.com"
+  },
+  {
+    "name": "Lookback",
+    "domain": "lookback.com"
+  },
+  {
+    "name": "Dscout",
+    "domain": "dscout.com"
+  },
+  {
+    "name": "Dovetail",
+    "domain": "dovetailapp.com"
+  },
+  {
+    "name": "Aurelius",
+    "domain": "aureliuslab.com"
+  },
+  {
+    "name": "EnjoyHQ",
+    "domain": "enjoyhq.com"
+  },
+  {
+    "name": "Marvin",
+    "domain": "heymarvin.com"
+  },
+  {
+    "name": "Optimal Workshop",
+    "domain": "optimalworkshop.com"
+  },
+  {
+    "name": "Sprig",
+    "domain": "sprig.com"
+  },
+  {
+    "name": "Delighted",
+    "domain": "delighted.com"
+  },
+  {
+    "name": "Medallia",
+    "domain": "medallia.com"
+  },
+  {
+    "name": "Qualaroo",
+    "domain": "qualaroo.com"
+  },
+  {
+    "name": "Survicate",
+    "domain": "survicate.com"
+  },
+  {
+    "name": "Refiner",
+    "domain": "refiner.io"
+  },
+  {
+    "name": "Canny",
+    "domain": "canny.io"
+  },
+  {
+    "name": "Nolt",
+    "domain": "nolt.io"
+  },
+  {
+    "name": "Kampsite",
+    "domain": "kampsite.co"
+  },
+  {
+    "name": "Upvoty",
+    "domain": "upvoty.com"
+  },
+  {
+    "name": "Featurebase",
+    "domain": "featurebase.app"
+  },
+  {
+    "name": "Frill",
+    "domain": "frill.co"
+  },
+  {
+    "name": "Skillshare",
+    "domain": "skillshare.com"
+  },
+  {
+    "name": "Pluralsight",
+    "domain": "pluralsight.com"
+  },
+  {
+    "name": "Treehouse",
+    "domain": "teamtreehouse.com"
+  },
+  {
+    "name": "Codecademy",
+    "domain": "codecademy.com"
+  },
+  {
+    "name": "freeCodeCamp",
+    "domain": "freecodecamp.org"
+  },
+  {
+    "name": "Scrimba",
+    "domain": "scrimba.com"
+  },
+  {
+    "name": "Particle",
+    "domain": "particle.io"
+  },
+  {
+    "name": "Twilio IoT",
+    "domain": "iot.twilio.com"
+  },
+  {
+    "name": "Losant",
+    "domain": "losant.com"
+  },
+  {
+    "name": "Arduino Cloud",
+    "domain": "app.arduino.cc"
+  },
+  {
+    "name": "Tuya IoT",
+    "domain": "iot.tuya.com"
+  },
+  {
+    "name": "Helium Network",
+    "domain": "helium.com"
   }
 ]
