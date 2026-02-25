@@ -8,7 +8,9 @@
     "push-algolia": "tsx scripts/push-algolia.ts",
     "discover": "tsx scripts/discover-apis.ts",
     "discover:postman": "tsx scripts/discover-postman.ts",
-    "scrape:endpoints": "tsx scripts/scrape-endpoints.ts"
+    "scrape:endpoints": "tsx scripts/scrape-endpoints.ts",
+    "discover:golden": "tsx scripts/discover-golden.ts",
+    "scrape:pricing": "tsx scripts/scrape-pricing.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
