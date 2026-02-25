@@ -39,6 +39,7 @@ interface Endpoint {
   parameters: any[];
   responses: Record<string, any>;
   doc_url: string | null;
+  section: string | null;
 }
 
 interface ScrapeResult {
@@ -121,6 +122,8 @@ function parseOpenApiSpec(spec: any, baseDocUrl?: string): Endpoint[] {
         docUrl = `${baseDocUrl}#${method.toLowerCase()}-${anchor}`;
       }
 
+      const tag = Array.isArray(details.tags) && details.tags.length > 0 ? details.tags[0] : null;
+
       endpoints.push({
         method: method.toUpperCase(),
         path: endpointPath,
@@ -129,6 +132,7 @@ function parseOpenApiSpec(spec: any, baseDocUrl?: string): Endpoint[] {
         parameters: params,
         responses,
         doc_url: docUrl,
+        section: tag,
       });
     }
   }
@@ -338,6 +342,7 @@ For each endpoint return a JSON object with:
 - path: the endpoint path (e.g. /v1/payments/{id})
 - summary: short name/title (e.g. "Create Payment")
 - description: one-sentence description
+- section: the category/group this endpoint belongs to (e.g. "Movies", "Payments", "Users"). Group related endpoints under the same section name, matching how the docs organize them.
 - parameters: array of {name, type, required, description, in} objects
 - responses: object with status codes as keys and {description} as values
 
@@ -375,6 +380,7 @@ ${markdown}`;
         parameters: Array.isArray(e.parameters) ? e.parameters : [],
         responses: e.responses && typeof e.responses === 'object' ? e.responses : {},
         doc_url: docUrl,
+        section: e.section ?? null,
       }));
 
     return {
@@ -420,6 +426,7 @@ async function saveEndpoints(supabase: SupabaseClient, apiId: string, endpoints:
     parameters: ep.parameters,
     responses: ep.responses,
     doc_url: ep.doc_url,
+    section: ep.section,
   }));
 
   const BATCH = 100;

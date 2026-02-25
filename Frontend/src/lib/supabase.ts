@@ -8,6 +8,22 @@ export type Api = {
   swagger_url: string | null;
   website: string | null;
   updated: string | null;
+  doc_url: string | null;
+  tldr: string | null;
+  scrape_status: string | null;
+};
+
+export type Endpoint = {
+  id: string;
+  api_id: string;
+  method: string;
+  path: string;
+  summary: string | null;
+  description: string | null;
+  parameters: any[] | null;
+  responses: Record<string, any> | null;
+  doc_url: string | null;
+  section: string | null;
 };
 
 export type Brand = {

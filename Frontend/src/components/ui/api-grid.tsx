@@ -56,9 +56,7 @@ export function ApiGrid({ brands, loading = false, query = '' }: ApiGridProps) {
       {brands.map((brand) => (
         <a
           key={brand.id}
-          href={brand.website ?? '#'}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={`/brand/${encodeURIComponent(brand.id)}`}
           className="group block p-6 bg-[var(--background)] rounded-2xl border border-[var(--border)] hover:border-[var(--accent)] hover:shadow-lg transition-all duration-300"
         >
           <div className="flex items-start justify-between mb-4">
