@@ -91,7 +91,16 @@ async function findDocUrl(
     }
 
     if (results.length > 0 && results[0].link) return results[0].link;
-  } catch {}
+  } catch (err: any) {
+    const status = err?.response?.status;
+    const msg = err?.response?.data?.error ?? err?.message ?? '';
+    if (status === 429 || status === 402 || status === 403) {
+      console.error(`   🚨 SearchAPI LIMIT HIT (${status}): ${msg}`);
+      console.error(`      ↳ You may need to upgrade your SearchAPI plan.`);
+    } else {
+      console.error(`   ⚠️  SearchAPI error for ${name}: [${status}] ${msg}`);
+    }
+  }
 
   return null;
 }
@@ -157,7 +166,10 @@ async function scrapeAndExtract(
       { headers: { Authorization: `Bearer ${fcKey}` }, timeout: 60000 },
     );
 
-    if (!data.success) return null;
+    if (!data.success) {
+      console.error(`   ⚠️  Firecrawl scrape failed for ${docUrl}: ${data.error ?? 'unknown'}`);
+      return null;
+    }
     const markdown: string = data.data?.markdown ?? '';
     if (markdown.length < 100) return null;
 
@@ -211,7 +223,19 @@ ${truncated}`;
       }));
 
     return { endpoints, tldr: parsed.tldr ?? null };
-  } catch { return null; }
+  } catch (err: any) {
+    const status = err?.response?.status;
+    const msg = err?.response?.data?.error ?? err?.message ?? '';
+    if (status === 429 || status === 402 || status === 403) {
+      const service = err?.config?.url?.includes('firecrawl') ? 'Firecrawl' : 
+                      err?.config?.url?.includes('openrouter') ? 'OpenRouter' : 'API';
+      console.error(`   🚨 ${service} LIMIT HIT (${status}): ${msg}`);
+      console.error(`      ↳ You may need to upgrade your ${service} plan.`);
+    } else {
+      console.error(`   ⚠️  scrapeAndExtract error for ${name}: [${status}] ${msg}`);
+    }
+    return null;
+  }
 }
 
 // ─── OpenAPI Spec Parsing ────────────────────────────────────────────────────
@@ -395,7 +419,7 @@ async function main() {
     if (!docUrl) {
       stats.skipped++;
       await upsertApi(supabase, target.domain, target.name, null, null, 0);
-      if (num % 50 === 0) console.log(`   ⚪ ${prefix} — no docs found`);
+      console.log(`   ⚪ ${prefix} — no docs found`);
       return;
     }
 
@@ -410,7 +434,10 @@ async function main() {
           result = parseOpenApiSpec(spec, docUrl);
           if (result.endpoints.length === 0) result = null;
         }
-      } catch {}
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status) console.error(`   ⚠️  Spec fetch failed for ${docUrl}: [${status}]`);
+      }
     }
 
     // Step 3: Firecrawl + LLM fallback
