@@ -120,7 +120,7 @@ async function extractPricing(
 ): Promise<PricingResult | null> {
   try {
     const { data } = await axios.post(
-      'https://api.firecrawl.dev/v1/scrape',
+      'https://api.firecrawl.dev/v2/scrape',
       { url: pricingUrl, formats: ['markdown'], timeout: 45000, onlyMainContent: true },
       { headers: { Authorization: `Bearer ${fcKey}` }, timeout: 60000 },
     );

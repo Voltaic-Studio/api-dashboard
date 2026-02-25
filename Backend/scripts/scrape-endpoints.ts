@@ -337,7 +337,7 @@ async function scrapeDocsWithFirecrawl(
 ): Promise<ScrapeResult | null> {
   try {
     const { data } = await axios.post(
-      'https://api.firecrawl.dev/v1/scrape',
+      'https://api.firecrawl.dev/v2/scrape',
       {
         url: docUrl,
         formats: ['markdown'],

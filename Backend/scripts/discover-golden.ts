@@ -93,7 +93,8 @@ async function findDocUrl(
     if (results.length > 0 && results[0].link) return results[0].link;
   } catch (err: any) {
     const status = err?.response?.status;
-    const msg = err?.response?.data?.error ?? err?.message ?? '';
+    const rawMsg = err?.response?.data?.error ?? err?.response?.data ?? err?.message ?? '';
+    const msg = typeof rawMsg === 'object' ? JSON.stringify(rawMsg) : rawMsg;
     if (status === 429 || status === 402 || status === 403) {
       console.error(`   🚨 SearchAPI LIMIT HIT (${status}): ${msg}`);
       console.error(`      ↳ You may need to upgrade your SearchAPI plan.`);
@@ -161,7 +162,7 @@ async function scrapeAndExtract(
 ): Promise<{ endpoints: Endpoint[]; tldr: string | null } | null> {
   try {
     const { data } = await axios.post(
-      'https://api.firecrawl.dev/v1/scrape',
+      'https://api.firecrawl.dev/v2/scrape',
       { url: docUrl, formats: ['markdown'], timeout: 45000, onlyMainContent: true },
       { headers: { Authorization: `Bearer ${fcKey}` }, timeout: 60000 },
     );
@@ -225,7 +226,8 @@ ${truncated}`;
     return { endpoints, tldr: parsed.tldr ?? null };
   } catch (err: any) {
     const status = err?.response?.status;
-    const msg = err?.response?.data?.error ?? err?.message ?? '';
+    const rawMsg = err?.response?.data?.error ?? err?.response?.data ?? err?.message ?? '';
+    const msg = typeof rawMsg === 'object' ? JSON.stringify(rawMsg) : rawMsg;
     if (status === 429 || status === 402 || status === 403) {
       const service = err?.config?.url?.includes('firecrawl') ? 'Firecrawl' : 
                       err?.config?.url?.includes('openrouter') ? 'OpenRouter' : 'API';
