@@ -87,6 +87,22 @@ async function fetchSpec(url: string): Promise<any | null> {
   } catch { return null; }
 }
 
+function resolveRef(spec: any, ref: string): any {
+  if (!ref || typeof ref !== 'string' || !ref.startsWith('#/')) return null;
+  const parts = ref.slice(2).split('/');
+  let current = spec;
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return null;
+    current = current[part];
+  }
+  return current ?? null;
+}
+
+function resolveParam(spec: any, p: any): any {
+  if (p?.$ref) return resolveRef(spec, p.$ref) ?? p;
+  return p;
+}
+
 function parseOpenApiSpec(spec: any, baseDocUrl?: string): Endpoint[] {
   const paths = spec?.paths;
   if (!paths || typeof paths !== 'object') return [];
@@ -94,28 +110,41 @@ function parseOpenApiSpec(spec: any, baseDocUrl?: string): Endpoint[] {
   const endpoints: Endpoint[] = [];
   const serverUrl = spec?.servers?.[0]?.url ?? spec?.host ?? '';
 
-  for (const [endpointPath, methods] of Object.entries(paths)) {
-    if (!methods || typeof methods !== 'object') continue;
+  for (const [endpointPath, pathItem] of Object.entries(paths)) {
+    if (!pathItem || typeof pathItem !== 'object') continue;
 
-    for (const [method, details] of Object.entries(methods as Record<string, any>)) {
+    const pathLevelParams: any[] = (pathItem as any).parameters ?? [];
+
+    for (const [method, details] of Object.entries(pathItem as Record<string, any>)) {
       if (!HTTP_METHODS.has(method.toLowerCase())) continue;
 
-      const params = (details.parameters ?? []).map((p: any) => ({
-        name: p.name,
-        type: p.schema?.type ?? p.type ?? 'string',
-        required: p.required ?? false,
-        description: p.description ?? null,
-        in: p.in ?? 'query',
-      }));
+      const mergedRawParams = [...pathLevelParams, ...(details.parameters ?? [])];
+      const seen = new Set<string>();
+      const params = mergedRawParams
+        .map((p: any) => resolveParam(spec, p))
+        .filter((p: any) => {
+          if (!p?.name) return false;
+          const key = `${p.in}:${p.name}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .map((p: any) => ({
+          name: p.name,
+          type: p.schema?.type ?? p.type ?? 'string',
+          required: p.required ?? false,
+          description: p.description ?? null,
+          in: p.in ?? 'query',
+        }));
 
       const responses: Record<string, any> = {};
       if (details.responses) {
-        for (const [code, resp] of Object.entries(details.responses as Record<string, any>)) {
+        for (const [code, rawResp] of Object.entries(details.responses as Record<string, any>)) {
+          const resp = rawResp?.$ref ? resolveRef(spec, rawResp.$ref) ?? rawResp : rawResp;
           responses[code] = { description: resp.description ?? null };
         }
       }
 
-      // Build doc_url: try to create a deep link
       let docUrl: string | null = null;
       if (baseDocUrl) {
         const anchor = endpointPath.replace(/[{}\/]/g, '-').replace(/^-|-$/g, '');

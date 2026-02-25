@@ -3,8 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Navbar } from '@/components/ui/navbar';
+import { EndpointCard } from '@/components/ui/endpoint-card';
+import { CopyForAgentButton } from '@/components/ui/copy-for-agent';
 import { createServerClient } from '@/lib/supabase';
-import { getMethodColor } from '@/lib/method-colors';
 import type { Api, Endpoint } from '@/lib/supabase';
 
 interface Props {
@@ -121,13 +122,7 @@ export default async function BrandPage({ params }: Props) {
                 <Image src="/white-arrow.png" alt="" width={14} height={14} />
               </a>
             )}
-            <button className="h-10 rounded-xl border border-[var(--foreground)]/20 bg-[var(--background)] flex items-center justify-center gap-2 text-[var(--foreground)] text-[13px] font-medium hover:bg-[var(--muted)] transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              Copy for agent
-            </button>
+            <CopyForAgentButton api={primary} endpoints={endpointList} docUrl={docUrl} />
           </div>
         </div>
 
@@ -169,45 +164,9 @@ export default async function BrandPage({ params }: Props) {
 
                   {/* Endpoint cards */}
                   <div className="flex flex-col gap-3">
-                    {eps.map((ep) => {
-                      const color = getMethodColor(ep.method);
-                      return (
-                        <a
-                          key={ep.id}
-                          href={ep.doc_url ?? docUrl ?? '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-4 px-5 h-[72px] rounded-2xl border border-[var(--foreground)]/15 hover:border-[#FF9500]/40 transition-colors group"
-                        >
-                          {/* Method badge */}
-                          <span
-                            className="text-xs font-semibold px-2.5 py-1 rounded-md flex-shrink-0 text-white uppercase tracking-wide"
-                            style={{ backgroundColor: color.bg }}
-                          >
-                            {ep.method.toUpperCase()}
-                          </span>
-
-                          {/* Name + path */}
-                          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                            <span className="text-sm text-[var(--foreground)] truncate">
-                              {ep.summary ?? ep.path}
-                            </span>
-                            <span className="text-xs text-[var(--foreground)]/50 truncate">
-                              {ep.path}
-                            </span>
-                          </div>
-
-                          {/* Orange arrow */}
-                          <Image
-                            src="/orange-arrow.png"
-                            alt=""
-                            width={20}
-                            height={20}
-                            className="flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
-                          />
-                        </a>
-                      );
-                    })}
+                    {eps.map((ep) => (
+                      <EndpointCard key={ep.id} endpoint={ep} fallbackDocUrl={docUrl} />
+                    ))}
                   </div>
                 </div>
               ))}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { ApiGrid } from '@/components/ui/api-grid';
+import { AgentInstructions } from '@/components/ui/agent-instructions';
 import type { Brand } from '@/lib/supabase';
 
 const PAGE_SIZE = 24;
@@ -73,6 +74,9 @@ export function SearchSection({ initialBrands, initialPage }: SearchSectionProps
             {resultCount} result{resultCount !== 1 ? 's' : ''}
           </p>
         )}
+        <div className={`transition-all duration-300 ${isSearching ? 'opacity-0 pointer-events-none h-0 mt-0' : 'opacity-100 h-auto mt-0'}`}>
+          <AgentInstructions />
+        </div>
       </div>
 
       <ApiGrid brands={brands} loading={loading} query={query} />
