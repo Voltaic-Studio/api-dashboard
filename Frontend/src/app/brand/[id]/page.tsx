@@ -24,11 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .limit(1)
     .single();
 
-  if (!data) return {};
+  const row = data as { title?: string; description?: string | null; tldr?: string | null } | null;
+  if (!row) return {};
 
   return {
-    title: data.title,
-    description: data.tldr ?? data.description ?? undefined,
+    title: row.title,
+    description: row.tldr ?? row.description ?? undefined,
   };
 }
 
@@ -40,6 +41,71 @@ function groupEndpointsBySection(endpoints: Endpoint[]) {
     groups[label].push(ep);
   }
   return groups;
+}
+
+function toTitleCase(raw: string): string {
+  return raw
+    .replace(/[-_]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((w) => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w)
+    .join(' ');
+}
+
+function fromApiIdSuffix(apiId: string): string | null {
+  const parts = apiId.split(':');
+  if (parts.length < 2) return null;
+  const suffix = parts.slice(1).join(':').trim();
+  if (!suffix) return null;
+  return toTitleCase(suffix);
+}
+
+function summarizeCapability(eps: Endpoint[], fallback: string): string {
+  const best = eps.find((e) => e.summary && e.summary.trim().length > 0)
+    ?? eps.find((e) => e.description && e.description.trim().length > 0)
+    ?? eps[0];
+  const description = (best?.summary ?? best?.description ?? fallback).trim();
+  return description.length > 64 ? `${description.slice(0, 61)}...` : description;
+}
+
+function buildCapabilities(sections: Record<string, Endpoint[]>, endpointList: Endpoint[], fallbackDocUrl: string | null) {
+  const map = new Map<string, { name: string; description: string; endpointCount: number; doc_url: string | null }>();
+
+  // 1) Section-based capabilities (current behavior)
+  for (const [name, eps] of Object.entries(sections)) {
+    map.set(name.toLowerCase(), {
+      name,
+      description: summarizeCapability(eps, `Core ${name.toLowerCase()} capabilities`),
+      endpointCount: eps.length,
+      doc_url: eps.find((e) => e.doc_url)?.doc_url ?? fallbackDocUrl,
+    });
+  }
+
+  // 2) Sub-API capabilities from api_id suffix (e.g. amazonaws.com:ec2)
+  const bySuffix = new Map<string, Endpoint[]>();
+  for (const ep of endpointList) {
+    const suffixName = fromApiIdSuffix(ep.api_id);
+    if (!suffixName) continue;
+    const key = suffixName.toLowerCase();
+    if (!bySuffix.has(key)) bySuffix.set(key, []);
+    bySuffix.get(key)!.push(ep);
+  }
+  for (const [key, eps] of bySuffix.entries()) {
+    if (map.has(key)) continue;
+    const name = eps[0] ? (fromApiIdSuffix(eps[0].api_id) ?? 'General') : 'General';
+    map.set(key, {
+      name,
+      description: summarizeCapability(eps, `${name} API capabilities`),
+      endpointCount: eps.length,
+      doc_url: eps.find((e) => e.doc_url)?.doc_url ?? fallbackDocUrl,
+    });
+  }
+
+  return Array.from(map.values())
+    .sort((a, b) => b.endpointCount - a.endpointCount)
+    .slice(0, 12);
 }
 
 export default async function BrandPage({ params }: Props) {
@@ -70,6 +136,7 @@ export default async function BrandPage({ params }: Props) {
 
   const endpointList: Endpoint[] = (endpoints ?? []) as Endpoint[];
   const sections = groupEndpointsBySection(endpointList);
+  const capabilities = buildCapabilities(sections, endpointList, docUrl);
 
   return (
     <main className="min-h-screen pt-24">
@@ -105,7 +172,7 @@ export default async function BrandPage({ params }: Props) {
               {primary.title}
             </h1>
             <p className="text-sm leading-snug text-[var(--foreground)]/60 mt-1">
-              Rest · {endpointList.length} endpoints
+              Rest · {capabilities.length} capabilities
             </p>
           </div>
 
@@ -136,39 +203,22 @@ export default async function BrandPage({ params }: Props) {
           </div>
         )}
 
-        {/* Endpoints */}
+        {/* Capabilities */}
         <div className="mt-10">
           <p className="text-sm font-medium text-[var(--foreground)]/50 mb-4">
-            Endpoints
+            Capabilities
           </p>
 
-          {endpointList.length === 0 ? (
+          {capabilities.length === 0 ? (
             <div className="rounded-2xl border border-[var(--foreground)]/20 border-dashed p-12 text-center">
               <p className="text-[var(--foreground)]/40 text-sm font-medium">
-                Endpoints coming soon
+                Capabilities coming soon
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-6">
-              {Object.entries(sections).map(([section, eps]) => (
-                <div key={section}>
-                  {/* Section header */}
-                  <div className="flex items-center gap-2 mb-3 cursor-pointer group">
-                    <span className="text-[13px] font-medium text-[var(--foreground)]">
-                      {section} endpoints
-                    </span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--foreground)]/50">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-
-                  {/* Endpoint cards */}
-                  <div className="flex flex-col gap-3">
-                    {eps.map((ep) => (
-                      <EndpointCard key={ep.id} endpoint={ep} fallbackDocUrl={docUrl} />
-                    ))}
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {capabilities.map((capability) => (
+                <EndpointCard key={capability.name} endpoint={capability} fallbackDocUrl={docUrl} />
               ))}
             </div>
           )}

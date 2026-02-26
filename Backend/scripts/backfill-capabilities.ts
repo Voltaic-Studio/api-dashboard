@@ -1,0 +1,321 @@
+/**
+ * backfill-capabilities.ts
+ *
+ * LLM-first capabilities backfill.
+ * For every API, generates:
+ *   capabilities: [{ title: string, description: string }]
+ * and writes it to `apis.capabilities` (jsonb).
+ *
+ * Usage:
+ *   cd Backend && pnpm run backfill:capabilities
+ *
+ * Optional flags:
+ *   --limit=2000
+ *   --concurrency=3
+ *   --withDocs=true
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import axios from 'axios';
+import fs from 'fs-extra';
+import path from 'path';
+
+type ApiRow = {
+  id: string;
+  title: string | null;
+  description: string | null;
+  tldr: string | null;
+  website: string | null;
+  doc_url: string | null;
+};
+
+type EndpointRow = {
+  id: string;
+  api_id: string;
+  method: string | null;
+  path: string | null;
+  summary: string | null;
+  description: string | null;
+  section: string | null;
+  doc_url: string | null;
+};
+
+type Capability = {
+  title: string;
+  description: string;
+};
+
+function loadEnv(): Record<string, string> {
+  const envPath = path.join(process.cwd(), '.env');
+  const result: Record<string, string> = {};
+  if (!fs.existsSync(envPath)) return result;
+  for (const line of fs.readFileSync(envPath, 'utf-8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    result[trimmed.slice(0, eqIdx).trim()] = trimmed.slice(eqIdx + 1).trim();
+  }
+  return result;
+}
+
+function createLimiter(concurrency: number) {
+  let active = 0;
+  const queue: (() => void)[] = [];
+  return async function limit<T>(fn: () => Promise<T>): Promise<T> {
+    while (active >= concurrency) {
+      await new Promise<void>(resolve => queue.push(resolve));
+    }
+    active++;
+    try { return await fn(); }
+    finally {
+      active--;
+      const next = queue.shift();
+      if (next) next();
+    }
+  };
+}
+
+function argNum(name: string, fallback: number): number {
+  const raw = process.argv.find(a => a.startsWith(`--${name}=`));
+  if (!raw) return fallback;
+  const n = Number(raw.split('=')[1]);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function argBool(name: string, fallback: boolean): boolean {
+  const raw = process.argv.find(a => a.startsWith(`--${name}=`));
+  if (!raw) return fallback;
+  const v = raw.split('=')[1].toLowerCase();
+  return ['1', 'true', 'yes', 'y'].includes(v);
+}
+
+function toTitleCase(raw: string): string {
+  return raw
+    .replace(/[-_]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((w) => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w)
+    .join(' ');
+}
+
+function normalizeCapabilityTitle(raw: string): string {
+  return toTitleCase(raw.replace(/api$/i, '').trim());
+}
+
+function tokenizeTitle(raw: string): string {
+  return normalizeCapabilityTitle(raw).toLowerCase();
+}
+
+function pathPrefix(pathValue: string | null): string | null {
+  if (!pathValue) return null;
+  const clean = pathValue.trim();
+  if (!clean.startsWith('/')) return null;
+  const parts = clean.split('/').filter(Boolean);
+  if (parts.length === 0) return null;
+  const candidate = parts[0];
+  if (/^v\d+$/i.test(candidate)) return parts[1] ? normalizeCapabilityTitle(parts[1]) : null;
+  return normalizeCapabilityTitle(candidate);
+}
+
+function compactSentence(s: string, max = 90): string {
+  const text = s.replace(/\s+/g, ' ').trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 3).trim()}...`;
+}
+
+function buildHintsFromEndpoints(endpoints: EndpointRow[]): string[] {
+  const hints = new Set<string>();
+
+  // sections
+  for (const ep of endpoints) {
+    if (ep.section?.trim()) hints.add(normalizeCapabilityTitle(ep.section));
+  }
+
+  // path prefixes
+  for (const ep of endpoints) {
+    const pref = pathPrefix(ep.path);
+    if (pref) hints.add(pref);
+  }
+
+  return Array.from(hints).slice(0, 24);
+}
+
+async function fetchJinaMarkdown(url: string, jinaKey?: string): Promise<string | null> {
+  try {
+    const headers: Record<string, string> = { Accept: 'text/markdown' };
+    if (jinaKey) headers.Authorization = `Bearer ${jinaKey}`;
+    const { data } = await axios.get(`https://r.jina.ai/${url}`, {
+      headers,
+      timeout: 30000,
+    });
+    if (!data || typeof data !== 'string') return null;
+    return data.length > 22000 ? data.slice(0, 22000) : data;
+  } catch {
+    return null;
+  }
+}
+
+async function llmGenerateCapabilities(
+  orKey: string,
+  api: ApiRow,
+  endpointHints: string[],
+  markdown: string | null,
+): Promise<Capability[]> {
+  const prompt = [
+    'Generate high-level API capabilities.',
+    'Rules:',
+    '- Return STRICT JSON with this shape only: {"capabilities":[{"title":"...","description":"..."}]}',
+    '- 4 to 12 capabilities max.',
+    '- Title should be short and specific (e.g. "Flight Search", "Webhooks").',
+    '- Description should be one short sentence.',
+    '- Focus on what the API offers at a high level.',
+    '- No confidence, no evidence, no extra fields.',
+    '',
+    `API: ${api.title ?? api.id} (${api.id})`,
+    '',
+    'Hints from known endpoints/sections:',
+    ...(endpointHints.length ? endpointHints.map((h, i) => `${i + 1}. ${h}`) : ['(none)']),
+    '',
+    'Docs markdown (possibly truncated):',
+    markdown ?? '(none)',
+  ].join('\n');
+
+  try {
+    const { data } = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'google/gemini-2.5-flash',
+        temperature: 0.1,
+        max_tokens: 1600,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }],
+      },
+      {
+        headers: { Authorization: `Bearer ${orKey}` },
+        timeout: 45000,
+      },
+    );
+
+    const raw = data?.choices?.[0]?.message?.content;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.capabilities) ? parsed.capabilities : []);
+    return arr
+      .filter((x: any) => x?.title && x?.description)
+      .map((x: any) => ({
+        title: normalizeCapabilityTitle(String(x.title)),
+        description: compactSentence(String(x.description), 120),
+      }))
+      .filter((x: Capability) => x.title.length > 1 && x.description.length > 8)
+      .slice(0, 12);
+  } catch (err: any) {
+    const status = err?.response?.status;
+    const msg = typeof err?.response?.data === 'object'
+      ? JSON.stringify(err.response.data)
+      : (err?.response?.data ?? err?.message ?? 'unknown');
+    console.error(`   ⚠️  LLM capability generation failed [${status ?? 'n/a'}]: ${msg}`);
+    return [];
+  }
+}
+
+function dedupeCapabilities(caps: Capability[]): Capability[] {
+  const map = new Map<string, Capability>();
+  for (const c of caps) {
+    const key = tokenizeTitle(c.title);
+    if (!key) continue;
+    const existing = map.get(key);
+    if (!existing || c.description.length > existing.description.length) {
+      map.set(key, c);
+    }
+  }
+  return Array.from(map.values()).slice(0, 12);
+}
+
+async function updateApiCapabilities(supabase: any, apiId: string, caps: Capability[]) {
+  const payload = caps.map((c) => ({
+    title: c.title,
+    description: c.description,
+  }));
+  const { error } = await supabase
+    .from('apis')
+    .update({ capabilities: payload })
+    .eq('id', apiId);
+  if (error) throw new Error(error.message);
+}
+
+async function main() {
+  const env = loadEnv();
+  const supabaseUrl = env.SUPABASE_URL ?? '';
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  const orKey = env.OPENROUTER_API_KEY ?? '';
+  const jinaKey = env.JINA_API_KEY;
+
+  if (!supabaseUrl || !supabaseKey || !orKey) {
+    console.error('❌ Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or OPENROUTER_API_KEY');
+    process.exit(1);
+  }
+
+  const limitRows = argNum('limit', 5000);
+  const concurrency = argNum('concurrency', 3);
+  const withDocs = argBool('withDocs', true);
+  const limiter = createLimiter(concurrency);
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  const { data: apisData, error: apisErr } = await supabase
+    .from('apis')
+    .select('id,title,description,tldr,website,doc_url')
+    .limit(limitRows);
+  if (apisErr) {
+    console.error(`❌ Failed to load APIs: ${apisErr.message}`);
+    process.exit(1);
+  }
+
+  const apis = (apisData ?? []) as ApiRow[];
+  console.log(`📦 APIs loaded: ${apis.length}`);
+
+  let done = 0;
+  let ok = 0;
+  let fail = 0;
+
+  await Promise.all(apis.map((api) => limiter(async () => {
+    try {
+      const { data: endpointData } = await supabase
+        .from('api_endpoints')
+        .select('id,api_id,method,path,summary,description,section,doc_url')
+        .eq('api_id', api.id);
+      const endpoints = (endpointData ?? []) as EndpointRow[];
+
+      const hints = buildHintsFromEndpoints(endpoints);
+      let markdown: string | null = null;
+      if (withDocs && (api.doc_url || api.website)) {
+        markdown = await fetchJinaMarkdown(api.doc_url ?? api.website!, jinaKey);
+      }
+
+      const llmCaps = await llmGenerateCapabilities(orKey, api, hints, markdown);
+      const capabilities = dedupeCapabilities(llmCaps);
+      await updateApiCapabilities(supabase, api.id, capabilities);
+
+      ok++;
+      done++;
+      console.log(`✅ [${done}/${apis.length}] ${api.id} — ${capabilities.length} capabilities`);
+    } catch (err: any) {
+      fail++;
+      done++;
+      console.error(`❌ [${done}/${apis.length}] ${api.id} — ${err?.message ?? String(err)}`);
+    }
+  })));
+
+  console.log('\n──────────');
+  console.log(`✅ APIs processed successfully: ${ok}`);
+  console.log(`⚠️  APIs failed: ${fail}`);
+}
+
+main().catch((err) => {
+  console.error('Fatal:', err);
+  process.exit(1);
+});
+

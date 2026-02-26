@@ -1,48 +1,53 @@
 'use client';
 
-import Image from 'next/image';
-import { getMethodColor } from '@/lib/method-colors';
-import type { Endpoint } from '@/lib/supabase';
-
 interface EndpointCardProps {
-  endpoint: Endpoint;
+  endpoint: {
+    name: string;
+    description: string;
+    endpointCount: number;
+    doc_url?: string | null;
+  };
   fallbackDocUrl?: string | null;
 }
 
+function getCapabilityIconName(name: string): string {
+  const label = name.toLowerCase();
+  if (/(payment|billing|invoice|checkout|charge|payout)/.test(label)) return 'credit-card';
+  if (/(webhook|event|callback)/.test(label)) return 'webhook';
+  if (/(connect|integration|platform|plugin|sdk)/.test(label)) return 'plug';
+  if (/(flight|airline|airport)/.test(label)) return 'plane';
+  if (/(hotel|stay|booking)/.test(label)) return 'hotel';
+  if (/(search|lookup|query|discovery)/.test(label)) return 'search';
+  if (/(security|auth|compliance|fraud|risk)/.test(label)) return 'shield-check';
+  if (/(shipping|delivery|logistics|parcel|freight)/.test(label)) return 'truck';
+  if (/(report|document|file|statement)/.test(label)) return 'file-text';
+  return 'globe';
+}
+
 export function EndpointCard({ endpoint, fallbackDocUrl }: EndpointCardProps) {
-  const color = getMethodColor(endpoint.method);
   const href = endpoint.doc_url ?? fallbackDocUrl ?? '#';
+  const iconName = getCapabilityIconName(endpoint.name);
+  const iconSrc = `https://api.iconify.design/lucide:${iconName}.svg?color=%23ff9500`;
 
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-4 px-5 h-[72px] rounded-2xl border border-[var(--foreground)]/15 hover:border-[#FF9500]/40 transition-colors group"
+      className="border border-[var(--foreground)]/20 rounded-[14px] py-[25px] px-[25px] flex flex-col items-center justify-center gap-[12px] min-h-[136px] transition-colors hover:border-[#FF9500]/40 group"
     >
-      <span
-        className="text-xs font-semibold px-2.5 py-1 rounded-md flex-shrink-0 text-white uppercase tracking-wide"
-        style={{ backgroundColor: color.bg }}
-      >
-        {endpoint.method.toUpperCase()}
-      </span>
-
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <span className="text-sm text-[var(--foreground)] truncate">
-          {endpoint.summary ?? endpoint.path}
-        </span>
-        <span className="text-xs text-[var(--foreground)]/50 truncate">
-          {endpoint.path}
-        </span>
+      <div className="w-12 h-12 rounded-full bg-[#FF9500]/10 flex items-center justify-center">
+        <img src={iconSrc} alt="" width={24} height={24} className="w-6 h-6" />
       </div>
 
-      <Image
-        src="/orange-arrow.png"
-        alt=""
-        width={20}
-        height={20}
-        className="flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
-      />
+      <div className="flex flex-col items-center gap-1 text-center">
+        <span className="text-xs leading-[18px] text-[var(--foreground)] font-normal">
+          {endpoint.name}
+        </span>
+        <span className="text-[10px] leading-[16.25px] text-[var(--foreground)]/60">
+          {endpoint.description}
+        </span>
+      </div>
     </a>
   );
 }

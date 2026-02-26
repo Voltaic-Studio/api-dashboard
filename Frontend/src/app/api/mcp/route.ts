@@ -4,7 +4,7 @@ import { Redis } from '@upstash/redis';
 type AnyApi = any;
 type AnyEndpoint = any;
 
-const CACHE_TTL = 60 * 60 * 24 * 7; // 7 days
+const CACHE_TTL = 60 * 60 * 24 * 14; // 14 days
 
 function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -26,16 +26,68 @@ function corsJson(data: any, status = 200) {
 async function searchApis(query: string, limit: number) {
   const supabase = createServerClient();
   const max = Math.min(limit, 50);
-  const words = query.split(/\s+/).filter(Boolean);
-  const conditions = words
-    .map(w => `title.ilike.%${w}%,description.ilike.%${w}%,id.ilike.%${w}%,tldr.ilike.%${w}%`)
-    .join(',');
+  const q = query.trim();
+  if (!q) return { count: 0, apis: [] };
 
-  const { data: apis } = await supabase
-    .from('apis')
-    .select('id, title, description, tldr, website, doc_url, logo')
-    .or(conditions)
-    .limit(200);
+  async function embedQuery(text: string): Promise<number[] | null> {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    const model = process.env.EMBEDDING_MODEL ?? 'openai/text-embedding-3-small';
+    if (!apiKey || text.length < 3) return null;
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model, input: text }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.data?.[0]?.embedding ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  let apis: AnyApi[] | null = null;
+
+  // Preferred path: endpoint-aware hybrid search via RPC
+  const queryEmbedding = await embedQuery(q);
+  if (queryEmbedding) {
+    const rpc = supabase as any;
+    const { data: hybrid } = await rpc.rpc('search_apis_hybrid', {
+      query_text: q,
+      query_embedding: queryEmbedding,
+      match_count: 120,
+    });
+    if (Array.isArray(hybrid) && hybrid.length > 0) {
+      apis = hybrid.map((r: any) => ({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        tldr: r.tldr ?? null,
+        website: r.website ?? null,
+        doc_url: r.doc_url ?? null,
+        logo: r.logo ?? null,
+      }));
+    }
+  }
+
+  // Fallback path: lexical search
+  if (!apis) {
+    const words = q.split(/\s+/).filter(Boolean);
+    const conditions = words
+      .map(w => `title.ilike.%${w}%,description.ilike.%${w}%,id.ilike.%${w}%,tldr.ilike.%${w}%`)
+      .join(',');
+    const { data } = await supabase
+      .from('apis')
+      .select('id, title, description, tldr, website, doc_url, logo')
+      .or(conditions)
+      .limit(200);
+    apis = (data as AnyApi[] | null) ?? [];
+  }
 
   if (!apis || apis.length === 0) return { count: 0, apis: [] };
 

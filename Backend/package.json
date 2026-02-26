@@ -13,7 +13,8 @@
     "scrape:pricing": "tsx scripts/scrape-pricing.ts",
     "cleanup": "tsx scripts/cleanup-apis.ts",
     "backfill:tldr": "tsx scripts/backfill-tldr.ts",
-    "backfill:embeddings": "tsx scripts/backfill-embeddings.ts"
+    "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
+    "backfill:capabilities": "tsx scripts/backfill-capabilities.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
