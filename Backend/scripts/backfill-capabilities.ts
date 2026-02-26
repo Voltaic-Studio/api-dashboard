@@ -43,6 +43,7 @@ type EndpointRow = {
 type Capability = {
   title: string;
   description: string;
+  logo_url?: string | null;
 };
 
 function loadEnv(): Record<string, string> {
@@ -158,30 +159,46 @@ async function fetchJinaMarkdown(url: string, jinaKey?: string): Promise<string 
   }
 }
 
+const SYSTEM_PROMPT = `You are an API capabilities analyst. Your job is to list the high-level capabilities (product areas / categories) of an API.
+
+CRITICAL RULES:
+1. Return STRICT JSON: {"capabilities":[{"title":"...","description":"...","domain":"..."}]}
+2. 4 to 12 capabilities max.
+3. "title" — short, specific product area (e.g. "Flight Search", "Webhooks", "Vertex Ai", "Google Maps").
+4. "description" — one short sentence explaining what the capability does.
+5. "domain" — ONLY set this when the capability is a well-known standalone product/sub-brand that has its own website domain (e.g. "maps.google.com", "stripe.com/connect"). Set to null otherwise. This is used to show the sub-brand's logo.
+6. No extra fields. No confidence, no evidence.
+
+SUB-API / SUB-BRAND HANDLING:
+- Large platforms (AWS, Google Cloud, Azure, Meta, etc.) contain many independent sub-APIs. Each significant sub-API MUST appear as its own capability.
+  Example for Google: "Google Maps", "Vertex Ai", "BigQuery", "Cloud Storage", "Gmail Api", etc.
+  Example for AWS: "Ec2", "S3", "Lambda", "DynamoDb", "Sqs", etc.
+- If the API was merged from multiple sub-domains during cleanup, the endpoint hints and sections will reflect the sub-APIs. Include ALL of them.
+- For sub-APIs that are well-known standalone products, provide their "domain" so their logo can be fetched (e.g. domain: "maps.google.com").
+
+CATEGORIES:
+- Capabilities also serve as categories for the API. Think of them as "what can I do with this API?"
+- Cover the full breadth: if an API has payments, webhooks, subscriptions, reporting — list all of them.
+- Use your training knowledge freely. The hints and docs are supplementary — do NOT limit yourself to only what is listed there. If you know the API offers something not in the hints, include it.
+- However, do NOT hallucinate capabilities that the API genuinely does not have.`;
+
 async function llmGenerateCapabilities(
   orKey: string,
   api: ApiRow,
   endpointHints: string[],
   markdown: string | null,
 ): Promise<Capability[]> {
-  const prompt = [
-    'Generate high-level API capabilities.',
-    'Rules:',
-    '- Return STRICT JSON with this shape only: {"capabilities":[{"title":"...","description":"..."}]}',
-    '- 4 to 12 capabilities max.',
-    '- Title should be short and specific (e.g. "Flight Search", "Webhooks").',
-    '- Description should be one short sentence.',
-    '- Focus on what the API offers at a high level.',
-    '- No confidence, no evidence, no extra fields.',
-    '',
+  const userPrompt = [
     `API: ${api.title ?? api.id} (${api.id})`,
+    api.tldr ? `TLDR: ${api.tldr}` : '',
+    api.description ? `Description: ${api.description}` : '',
     '',
     'Hints from known endpoints/sections:',
     ...(endpointHints.length ? endpointHints.map((h, i) => `${i + 1}. ${h}`) : ['(none)']),
     '',
     'Docs markdown (possibly truncated):',
     markdown ?? '(none)',
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 
   try {
     const { data } = await axios.post(
@@ -189,9 +206,12 @@ async function llmGenerateCapabilities(
       {
         model: 'google/gemini-2.5-flash',
         temperature: 0.1,
-        max_tokens: 1600,
+        max_tokens: 2000,
         response_format: { type: 'json_object' },
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
       },
       {
         headers: { Authorization: `Bearer ${orKey}` },
@@ -208,6 +228,7 @@ async function llmGenerateCapabilities(
       .map((x: any) => ({
         title: normalizeCapabilityTitle(String(x.title)),
         description: compactSentence(String(x.description), 120),
+        logo_url: x.domain && typeof x.domain === 'string' ? x.domain.trim() : null,
       }))
       .filter((x: Capability) => x.title.length > 1 && x.description.length > 8)
       .slice(0, 12);
@@ -228,17 +249,26 @@ function dedupeCapabilities(caps: Capability[]): Capability[] {
     if (!key) continue;
     const existing = map.get(key);
     if (!existing || c.description.length > existing.description.length) {
-      map.set(key, c);
+      map.set(key, { ...c, logo_url: c.logo_url ?? existing?.logo_url ?? null });
     }
   }
   return Array.from(map.values()).slice(0, 12);
 }
 
-async function updateApiCapabilities(supabase: any, apiId: string, caps: Capability[]) {
-  const payload = caps.map((c) => ({
-    title: c.title,
-    description: c.description,
-  }));
+async function updateApiCapabilities(supabase: any, apiId: string, caps: Capability[], logoToken: string) {
+  const payload = caps.map((c) => {
+    const entry: Record<string, string> = {
+      title: c.title,
+      description: c.description,
+    };
+    if (c.logo_url) {
+      const domain = c.logo_url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+      entry.logo_url = logoToken
+        ? `https://img.logo.dev/${domain}?token=${logoToken}&size=64&format=png`
+        : `https://img.logo.dev/${domain}?size=64&format=png`;
+    }
+    return entry;
+  });
   const { error } = await supabase
     .from('apis')
     .update({ capabilities: payload })
@@ -252,6 +282,7 @@ async function main() {
   const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY ?? '';
   const orKey = env.OPENROUTER_API_KEY ?? '';
   const jinaKey = env.JINA_API_KEY;
+  const logoToken = env.LOGO_DEV_TOKEN ?? '';
 
   if (!supabaseUrl || !supabaseKey || !orKey) {
     console.error('❌ Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or OPENROUTER_API_KEY');
@@ -297,7 +328,7 @@ async function main() {
 
       const llmCaps = await llmGenerateCapabilities(orKey, api, hints, markdown);
       const capabilities = dedupeCapabilities(llmCaps);
-      await updateApiCapabilities(supabase, api.id, capabilities);
+      await updateApiCapabilities(supabase, api.id, capabilities, logoToken);
 
       ok++;
       done++;

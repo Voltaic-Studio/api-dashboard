@@ -12,6 +12,12 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+type StoredCapability = {
+  title: string;
+  description: string;
+  logo_url?: string | null;
+};
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const domain = decodeURIComponent(id);
@@ -70,10 +76,9 @@ function summarizeCapability(eps: Endpoint[], fallback: string): string {
   return description.length > 64 ? `${description.slice(0, 61)}...` : description;
 }
 
-function buildCapabilities(sections: Record<string, Endpoint[]>, endpointList: Endpoint[], fallbackDocUrl: string | null) {
+function buildCapabilitiesFromEndpoints(sections: Record<string, Endpoint[]>, endpointList: Endpoint[], fallbackDocUrl: string | null) {
   const map = new Map<string, { name: string; description: string; endpointCount: number; doc_url: string | null }>();
 
-  // 1) Section-based capabilities (current behavior)
   for (const [name, eps] of Object.entries(sections)) {
     map.set(name.toLowerCase(), {
       name,
@@ -83,7 +88,6 @@ function buildCapabilities(sections: Record<string, Endpoint[]>, endpointList: E
     });
   }
 
-  // 2) Sub-API capabilities from api_id suffix (e.g. amazonaws.com:ec2)
   const bySuffix = new Map<string, Endpoint[]>();
   for (const ep of endpointList) {
     const suffixName = fromApiIdSuffix(ep.api_id);
@@ -135,8 +139,27 @@ export default async function BrandPage({ params }: Props) {
     .order('path', { ascending: true });
 
   const endpointList: Endpoint[] = (endpoints ?? []) as Endpoint[];
-  const sections = groupEndpointsBySection(endpointList);
-  const capabilities = buildCapabilities(sections, endpointList, docUrl);
+
+  /* --- Capabilities: prefer stored JSONB, fall back to endpoint-derived --- */
+  const storedCaps: StoredCapability[] = (() => {
+    const raw = (primary as any).capabilities;
+    if (!Array.isArray(raw) || raw.length === 0) return [];
+    return raw.filter((c: any) => c?.title && c?.description) as StoredCapability[];
+  })();
+
+  let capabilities: { name: string; description: string; endpointCount?: number; doc_url: string | null; logo_url?: string | null }[];
+
+  if (storedCaps.length > 0) {
+    capabilities = storedCaps.map(c => ({
+      name: c.title,
+      description: c.description,
+      doc_url: docUrl,
+      logo_url: c.logo_url ?? null,
+    }));
+  } else {
+    const sections = groupEndpointsBySection(endpointList);
+    capabilities = buildCapabilitiesFromEndpoints(sections, endpointList, docUrl);
+  }
 
   return (
     <main className="min-h-screen pt-24">
