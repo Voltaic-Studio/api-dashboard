@@ -11,7 +11,9 @@
     "scrape:endpoints": "tsx scripts/scrape-endpoints.ts",
     "discover:golden": "tsx scripts/discover-golden.ts",
     "scrape:pricing": "tsx scripts/scrape-pricing.ts",
-    "cleanup": "tsx scripts/cleanup-apis.ts"
+    "cleanup": "tsx scripts/cleanup-apis.ts",
+    "backfill:tldr": "tsx scripts/backfill-tldr.ts",
+    "backfill:embeddings": "tsx scripts/backfill-embeddings.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",

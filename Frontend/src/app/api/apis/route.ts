@@ -11,6 +11,32 @@ export interface Brand {
   api_count: number;
 }
 
+async function embedQuery(query: string): Promise<number[] | null> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  const model = process.env.EMBEDDING_MODEL ?? 'openai/text-embedding-3-small';
+  if (!apiKey || !query.trim()) return null;
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        input: query,
+      }),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.data?.[0]?.embedding ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function groupByBrand(apis: Api[]): Brand[] {
   const groups = new Map<string, Api[]>();
 
@@ -41,9 +67,34 @@ export async function GET(request: Request) {
   const supabase = createServerClient();
 
   if (q) {
+    // Preferred path: endpoint-aware hybrid search (vector + lexical)
+    const queryEmbedding = q.length >= 3 ? await embedQuery(q) : null;
+    if (queryEmbedding) {
+      const rpc = supabase as any;
+      const { data: hybrid, error: hybridError } = await rpc.rpc('search_apis_hybrid', {
+        query_text: q,
+        query_embedding: queryEmbedding,
+        match_count: 120,
+      });
+
+      const hybridRows: any[] = Array.isArray(hybrid) ? hybrid : [];
+      if (!hybridError && hybridRows.length > 0) {
+        const normalized = hybridRows.map((r) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          logo: r.logo ?? null,
+          website: r.website ?? null,
+        })) as Api[];
+        const brands = groupByBrand(normalized);
+        return Response.json({ brands, count: brands.length });
+      }
+    }
+
+    // Fallback path: keyword search only
     const words = q.split(/\s+/).filter(Boolean);
     const conditions = words
-      .map(w => `title.ilike.%${w}%,description.ilike.%${w}%,id.ilike.%${w}%`)
+      .map(w => `title.ilike.%${w}%,description.ilike.%${w}%,tldr.ilike.%${w}%,id.ilike.%${w}%`)
       .join(',');
 
     const { data, error } = await supabase

@@ -57,17 +57,15 @@ export function AgentInstructions() {
   }
 
   return (
-    <div className="flex justify-center mt-6">
-      <button
-        onClick={handleCopy}
-        className="h-12 px-8 bg-[#FF9500] rounded-2xl shadow-[0px_10px_15px_0px_rgba(0,0,0,0.1),0px_4px_6px_0px_rgba(0,0,0,0.1)] flex items-center justify-center gap-2.5 text-white text-sm font-medium tracking-[-0.2px] hover:opacity-90 transition-opacity"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-        {copied ? 'Copied!' : 'Instructions for agents'}
-      </button>
-    </div>
+    <button
+      onClick={handleCopy}
+      className="h-12 px-8 bg-[#FF9500] rounded-2xl shadow-[0px_10px_15px_0px_rgba(0,0,0,0.1),0px_4px_6px_0px_rgba(0,0,0,0.1)] flex items-center justify-center gap-2.5 text-white text-sm font-medium tracking-[-0.2px] hover:opacity-90 transition-opacity"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      </svg>
+      {copied ? 'Copied!' : 'Instructions for agents'}
+    </button>
   );
 }

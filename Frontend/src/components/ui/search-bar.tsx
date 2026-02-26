@@ -1,9 +1,10 @@
 'use client';
 
-import { Search as SearchIcon, ArrowRight } from 'lucide-react';
+import { Search as SearchIcon } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Brand } from '@/lib/supabase';
+import Image from 'next/image';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -44,9 +45,16 @@ export function SearchBar({ onSearch, suggestions = [] }: SearchBarProps) {
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           onChange={handleChange}
         />
-        <button className="p-2 bg-[var(--muted)] rounded-lg hover:bg-[var(--accent)] hover:text-white transition-colors">
-          <ArrowRight className="w-5 h-5" />
-        </button>
+        <span className="mr-3 flex items-center justify-center pointer-events-none select-none">
+          <Image
+            src="/back-button.png"
+            alt=""
+            width={26}
+            height={26}
+            className="scale-x-[-1] h-auto w-auto max-w-none"
+            style={{ filter: 'brightness(0) saturate(100%) invert(58%) sepia(93%) saturate(1674%) hue-rotate(359deg) brightness(103%) contrast(102%)' }}
+          />
+        </span>
       </div>
 
       {focused && !value && suggestions.length > 0 && (

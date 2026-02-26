@@ -37,9 +37,6 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center justify-center gap-8 text-sm font-medium text-[var(--foreground)]/70">
-          <a href="#apis" className="hover:text-[var(--foreground)] transition-colors">Discover</a>
-          <a href="#apis" className="hover:text-[var(--foreground)] transition-colors">Categories</a>
-          <a href="#submit" className="hover:text-[var(--foreground)] transition-colors">Submit</a>
         </div>
 
         <div className="flex justify-end">
