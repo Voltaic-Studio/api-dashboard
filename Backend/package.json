@@ -14,13 +14,16 @@
     "cleanup": "tsx scripts/cleanup-apis.ts",
     "backfill:tldr": "tsx scripts/backfill-tldr.ts",
     "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
-    "backfill:capabilities": "tsx scripts/backfill-capabilities.ts"
+    "backfill:capabilities": "tsx scripts/backfill-capabilities.ts",
+    "validate:doc-urls": "tsx scripts/validate-doc-urls.ts",
+    "seed:missing": "tsx scripts/seed-missing-apis.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
     "axios": "^1.6.0",
     "fs-extra": "^11.1.0",
-    "js-yaml": "^4.1.1"
+    "js-yaml": "^4.1.1",
+    "playwright": "^1.58.2"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.0",
