@@ -388,7 +388,7 @@ ${markdown}`;
     const { data } = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'google/gemini-3.0-flash',
+        model: 'google/gemini-2.5-flash',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 4000,
         response_format: { type: 'json_object' },
@@ -428,7 +428,7 @@ async function generateTldr(api: ApiRow, orKey: string): Promise<string | null> 
     const { data } = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'google/gemini-3.0-flash',
+        model: 'google/gemini-2.5-flash',
         messages: [{
           role: 'user',
           content: `Write exactly 2-3 sentences describing what the "${api.title}" API (${api.id}) does. Be factual and concise. Description hint: ${api.description ?? 'none'}`,

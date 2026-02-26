@@ -10,7 +10,8 @@
     "discover:postman": "tsx scripts/discover-postman.ts",
     "scrape:endpoints": "tsx scripts/scrape-endpoints.ts",
     "discover:golden": "tsx scripts/discover-golden.ts",
-    "scrape:pricing": "tsx scripts/scrape-pricing.ts"
+    "scrape:pricing": "tsx scripts/scrape-pricing.ts",
+    "cleanup": "tsx scripts/cleanup-apis.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",

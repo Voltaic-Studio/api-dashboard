@@ -193,7 +193,7 @@ async function generateDescription(
     const { data } = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'google/gemini-flash-1.5',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'user',

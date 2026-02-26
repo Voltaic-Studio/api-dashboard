@@ -154,7 +154,7 @@ ${truncated}`;
     const { data: llmData } = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'google/gemini-2.5-flash-preview',
+        model: 'google/gemini-2.5-flash',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 3000,
         response_format: { type: 'json_object' },

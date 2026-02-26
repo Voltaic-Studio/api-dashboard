@@ -1,7 +1,17 @@
 import { createServerClient } from '@/lib/supabase';
+import { Redis } from '@upstash/redis';
 
 type AnyApi = any;
 type AnyEndpoint = any;
+
+const CACHE_TTL = 60 * 60 * 24 * 7; // 7 days
+
+function getRedis(): Redis | null {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  return new Redis({ url, token });
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -125,6 +135,79 @@ async function getEndpointInfo(apiId: string, method: string, path: string) {
   };
 }
 
+async function getLiveDocs(apiId: string, url?: string) {
+  const supabase = createServerClient();
+  const redis = getRedis();
+
+  // If no URL provided, look up the doc_url from the DB
+  let docUrl = url;
+  if (!docUrl) {
+    const { data: apis } = await supabase
+      .from('apis')
+      .select('doc_url, website')
+      .or(`id.eq.${apiId},id.like.${apiId}:%`)
+      .limit(5);
+
+    if (!apis || apis.length === 0) return null;
+    const typedApis = apis as AnyApi[];
+    docUrl = typedApis.find((a) => a.doc_url)?.doc_url ?? typedApis[0]?.website;
+  }
+
+  if (!docUrl) return null;
+
+  const cacheKey = `docs:${docUrl}`;
+
+  // Check cache
+  if (redis) {
+    try {
+      const cached = await redis.get<string>(cacheKey);
+      if (cached) {
+        return {
+          api: apiId,
+          doc_url: docUrl,
+          markdown: cached,
+          cached: true,
+        };
+      }
+    } catch {}
+  }
+
+  // Fetch via Jina Reader
+  try {
+    const jinaUrl = `https://r.jina.ai/${docUrl}`;
+    const headers: Record<string, string> = { Accept: 'text/markdown' };
+    if (process.env.JINA_API_KEY) {
+      headers['Authorization'] = `Bearer ${process.env.JINA_API_KEY}`;
+    }
+    const res = await fetch(jinaUrl, {
+      headers,
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!res.ok) return null;
+    let markdown = await res.text();
+
+    // Truncate to avoid blowing up context windows
+    if (markdown.length > 25000) {
+      markdown = markdown.slice(0, 25000) + '\n\n[... truncated — visit doc_url for full documentation]';
+    }
+
+    // Cache the result
+    if (redis) {
+      try { await redis.set(cacheKey, markdown, { ex: CACHE_TTL }); } catch {}
+    }
+
+    return {
+      api: apiId,
+      doc_url: docUrl,
+      markdown,
+      cached: false,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function jsonRpcResponse(id: any, result: any) {
   return corsJson({ jsonrpc: '2.0', id, result });
 }
@@ -168,6 +251,18 @@ const TOOLS = [
         path: { type: 'string', description: 'Endpoint path (e.g. "/v1/payments/{id}")' },
       },
       required: ['api_id', 'method', 'path'],
+    },
+  },
+  {
+    name: 'get_live_docs',
+    description: 'Fetch live, up-to-date API documentation as markdown from the official docs page. Use this when you need the latest documentation content, or when endpoint details from get_api_detail are insufficient. Results are cached for 7 days.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        api_id: { type: 'string', description: 'The API identifier (e.g. "stripe.com"). Used to look up the documentation URL.' },
+        url: { type: 'string', description: 'Optional: direct URL to fetch. If omitted, the stored doc_url for the API is used.' },
+      },
+      required: ['api_id'],
     },
   },
 ];
@@ -226,6 +321,19 @@ export async function POST(req: Request) {
       }
       return jsonRpcResponse(id, {
         content: [{ type: 'text', text: UNTRUSTED_NOTICE + JSON.stringify(result, null, 2) }],
+      });
+    }
+
+    if (toolName === 'get_live_docs') {
+      const result = await getLiveDocs(args.api_id ?? '', args.url);
+      if (!result) {
+        return jsonRpcResponse(id, {
+          content: [{ type: 'text', text: `Could not fetch live docs for "${args.api_id}". No documentation URL found or the page could not be reached.` }],
+        });
+      }
+      const cacheNote = result.cached ? '(served from cache)' : '(fetched live)';
+      return jsonRpcResponse(id, {
+        content: [{ type: 'text', text: `${UNTRUSTED_NOTICE}Documentation for ${result.api} ${cacheNote}\nSource: ${result.doc_url}\n\n${result.markdown}` }],
       });
     }
 

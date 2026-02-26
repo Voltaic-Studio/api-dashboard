@@ -198,7 +198,7 @@ async function generateDescription(title: string, domain: string, apiKey: string
     const { data } = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'google/gemini-flash-1.5',
+        model: 'google/gemini-2.5-flash',
         messages: [{ role: 'user', content: `Write exactly one sentence (max 20 words) describing what the "${title}" API (${domain}) does. Be factual.` }],
         max_tokens: 60,
       },
