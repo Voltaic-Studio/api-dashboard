@@ -289,23 +289,29 @@ async function main() {
     process.exit(1);
   }
 
-  const limitRows = argNum('limit', 5000);
-  const concurrency = argNum('concurrency', 3);
+  const concurrency = 3;
   const withDocs = argBool('withDocs', true);
   const limiter = createLimiter(concurrency);
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const { data: apisData, error: apisErr } = await supabase
-    .from('apis')
-    .select('id,title,description,tldr,website,doc_url')
-    .limit(limitRows);
-  if (apisErr) {
-    console.error(`❌ Failed to load APIs: ${apisErr.message}`);
-    process.exit(1);
+  console.log('📦 Loading all APIs...');
+  const apis: ApiRow[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('apis')
+      .select('id,title,description,tldr,website,doc_url')
+      .range(from, from + 999);
+    if (error) {
+      console.error(`❌ Failed to load APIs: ${error.message}`);
+      process.exit(1);
+    }
+    if (!data || data.length === 0) break;
+    apis.push(...(data as ApiRow[]));
+    if (data.length < 1000) break;
+    from += 1000;
   }
-
-  const apis = (apisData ?? []) as ApiRow[];
   console.log(`📦 APIs loaded: ${apis.length}`);
 
   let done = 0;

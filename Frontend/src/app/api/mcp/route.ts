@@ -4,7 +4,18 @@ import { Redis } from '@upstash/redis';
 type AnyApi = any;
 type AnyEndpoint = any;
 
+type ExtractedEndpoint = {
+  method: string;
+  path: string;
+  summary: string | null;
+  description: string | null;
+  section: string | null;
+  parameters: { name: string; type: string; required: boolean; description: string | null; in: string }[];
+  responses: Record<string, { description: string | null }>;
+};
+
 const CACHE_TTL = 60 * 60 * 24 * 14; // 14 days
+const ENDPOINTS_CACHE_TTL = 60 * 60 * 24 * 14; // 14 days
 
 function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -112,6 +123,114 @@ async function searchApis(query: string, limit: number) {
   return { count: brands.length, apis: brands };
 }
 
+async function fetchJinaMarkdown(docUrl: string): Promise<string | null> {
+  try {
+    const jinaUrl = `https://r.jina.ai/${docUrl}`;
+    const headers: Record<string, string> = { Accept: 'text/markdown' };
+    if (process.env.JINA_API_KEY) {
+      headers['Authorization'] = `Bearer ${process.env.JINA_API_KEY}`;
+    }
+    const res = await fetch(jinaUrl, {
+      headers,
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) return null;
+    let md = await res.text();
+    if (md.length > 30000) md = md.slice(0, 30000);
+    return md;
+  } catch {
+    return null;
+  }
+}
+
+async function llmExtractEndpoints(markdown: string, apiName: string): Promise<ExtractedEndpoint[]> {
+  const orKey = process.env.OPENROUTER_API_KEY;
+  if (!orKey) return [];
+
+  const prompt = `Extract ALL API endpoints from this documentation. For each endpoint provide:
+- method: HTTP method (GET, POST, PUT, DELETE, PATCH)
+- path: the endpoint path (e.g. /v1/payments/{id})
+- summary: short name/title (e.g. "Create Payment")
+- description: one-sentence description
+- section: the category/group this endpoint belongs to (e.g. "Payments", "Users", "Webhooks")
+- parameters: array of {name, type, required, description, in} objects
+- responses: object with status codes as keys and {description} as values
+
+If the page has NO actual API endpoints listed, return {"endpoints": []}.
+
+Return ONLY valid JSON: {"endpoints": [...]}
+
+API: ${apiName}
+Documentation:
+${markdown}`;
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${orKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        temperature: 0,
+        max_tokens: 4000,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+
+    if (!res.ok) return [];
+    const data = await res.json();
+    const raw = data?.choices?.[0]?.message?.content;
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    const arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.endpoints) ? parsed.endpoints : []);
+
+    return arr
+      .filter((e: any) => e?.method && e?.path)
+      .map((e: any) => ({
+        method: String(e.method).toUpperCase(),
+        path: String(e.path),
+        summary: e.summary ?? null,
+        description: e.description ?? null,
+        section: e.section ?? null,
+        parameters: Array.isArray(e.parameters) ? e.parameters : [],
+        responses: e.responses && typeof e.responses === 'object' ? e.responses : {},
+      }));
+  } catch {
+    return [];
+  }
+}
+
+async function getExtractedEndpoints(apiId: string, docUrl: string, apiName: string): Promise<ExtractedEndpoint[]> {
+  const redis = getRedis();
+  const cacheKey = `endpoints:${apiId}`;
+
+  if (redis) {
+    try {
+      const cached = await redis.get<string>(cacheKey);
+      if (cached) {
+        const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached;
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+  }
+
+  const markdown = await fetchJinaMarkdown(docUrl);
+  if (!markdown) return [];
+
+  const endpoints = await llmExtractEndpoints(markdown, apiName);
+
+  if (redis && endpoints.length > 0) {
+    try { await redis.set(cacheKey, JSON.stringify(endpoints), { ex: ENDPOINTS_CACHE_TTL }); } catch {}
+  }
+
+  return endpoints;
+}
+
 async function getApiDetail(apiId: string) {
   const supabase = createServerClient();
 
@@ -124,18 +243,14 @@ async function getApiDetail(apiId: string) {
 
   const typedApis = apis as AnyApi[];
   const primary = typedApis.find((a) => a.id === apiId) ?? typedApis[0];
-  const apiIds = typedApis.map((a) => a.id);
+  const docUrl = typedApis.find((a) => a.doc_url)?.doc_url ?? primary.website;
 
-  const { data: endpoints } = await supabase
-    .from('api_endpoints')
-    .select('*')
-    .in('api_id', apiIds)
-    .order('section', { ascending: true })
-    .order('method', { ascending: true })
-    .order('path', { ascending: true });
+  const endpoints = docUrl
+    ? await getExtractedEndpoints(apiId, docUrl, primary.title ?? apiId)
+    : [];
 
   const sections: Record<string, any[]> = {};
-  for (const ep of ((endpoints ?? []) as AnyEndpoint[])) {
+  for (const ep of endpoints) {
     const sec = ep.section ?? 'General';
     if (!sections[sec]) sections[sec] = [];
     sections[sec].push({
@@ -145,7 +260,6 @@ async function getApiDetail(apiId: string) {
       description: ep.description,
       parameters: ep.parameters,
       responses: ep.responses,
-      doc_url: ep.doc_url,
     });
   }
 
@@ -154,36 +268,47 @@ async function getApiDetail(apiId: string) {
     title: primary.title,
     tldr: primary.tldr ?? primary.description,
     website: primary.website,
-    doc_url: typedApis.find((a) => a.doc_url)?.doc_url ?? primary.website,
-    endpoint_count: ((endpoints ?? []) as AnyEndpoint[]).length,
+    doc_url: docUrl,
+    endpoint_count: endpoints.length,
     sections,
+    live: true,
   };
 }
 
-async function getEndpointInfo(apiId: string, method: string, path: string) {
+async function getEndpointInfo(apiId: string, method: string, pathQuery: string) {
   const supabase = createServerClient();
 
-  const { data } = await supabase
-    .from('api_endpoints')
-    .select('*')
-    .ilike('api_id', `${apiId}%`)
-    .eq('method', method.toUpperCase())
-    .eq('path', path)
-    .limit(1)
-    .single();
+  const { data: apis } = await supabase
+    .from('apis')
+    .select('id, title, doc_url, website')
+    .or(`id.eq.${apiId},id.like.${apiId}:%`)
+    .limit(5);
 
-  if (!data) return null;
+  if (!apis || apis.length === 0) return null;
 
-  const ep = data as AnyEndpoint;
+  const typedApis = apis as AnyApi[];
+  const primary = typedApis.find((a: AnyApi) => a.id === apiId) ?? typedApis[0];
+  const docUrl = typedApis.find((a: AnyApi) => a.doc_url)?.doc_url ?? primary.website;
+
+  if (!docUrl) return null;
+
+  const endpoints = await getExtractedEndpoints(apiId, docUrl, primary.title ?? apiId);
+  const match = endpoints.find(
+    ep => ep.method === method.toUpperCase() && ep.path === pathQuery
+  );
+
+  if (!match) return null;
+
   return {
-    method: ep.method,
-    path: ep.path,
-    summary: ep.summary,
-    description: ep.description,
-    section: ep.section,
-    parameters: ep.parameters,
-    responses: ep.responses,
-    doc_url: ep.doc_url,
+    method: match.method,
+    path: match.path,
+    summary: match.summary,
+    description: match.description,
+    section: match.section,
+    parameters: match.parameters,
+    responses: match.responses,
+    doc_url: docUrl,
+    live: true,
   };
 }
 
@@ -283,7 +408,7 @@ const TOOLS = [
   },
   {
     name: 'get_api_detail',
-    description: 'Get full details for a specific API including all endpoints with parameters, responses, and documentation links.',
+    description: 'Get full details for a specific API including live-extracted endpoints with parameters, responses, and sections. Endpoints are fetched from official docs via Jina Reader and extracted by LLM. Results are cached for 14 days.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -294,7 +419,7 @@ const TOOLS = [
   },
   {
     name: 'get_endpoint_info',
-    description: 'Get detailed information about a specific endpoint including parameters, response schema, and documentation URL.',
+    description: 'Get detailed information about a specific endpoint including parameters and response schema. Data is live-extracted from official docs and cached.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -307,7 +432,7 @@ const TOOLS = [
   },
   {
     name: 'get_live_docs',
-    description: 'Fetch live, up-to-date API documentation as markdown from the official docs page. Use this when you need the latest documentation content, or when endpoint details from get_api_detail are insufficient. Results are cached for 7 days.',
+    description: 'Fetch live API documentation as raw markdown from the official docs page. Use this when you need the full unstructured documentation content. Results are cached for 14 days.',
     inputSchema: {
       type: 'object',
       properties: {

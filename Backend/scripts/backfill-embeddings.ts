@@ -132,29 +132,34 @@ async function main() {
     process.exit(1);
   }
 
-  const apiLimit = argNum('apiLimit', 10000);
-  const endpointLimit = argNum('endpointLimit', 100000);
-  const batchSize = argNum('batch', 32);
-  const concurrency = argNum('concurrency', 3);
+  const batchSize = 32;
+  const concurrency = 3;
   const limiter = createLimiter(concurrency);
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   console.log(`🧠 Embedding model: ${embeddingModel}`);
 
-  // ── APIs ────────────────────────────────────────────────────────────────────
-  const { data: apisData, error: apisErr } = await supabase
-    .from('apis')
-    .select('id,title,description,tldr,website,doc_url')
-    .is('embedding', null)
-    .limit(apiLimit);
-
-  if (apisErr) {
-    console.error(`❌ Failed loading APIs: ${apisErr.message}`);
-    process.exit(1);
+  // ── APIs (paginated fetch) ─────────────────────────────────────────────────
+  const apis: ApiRow[] = [];
+  {
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('apis')
+        .select('id,title,description,tldr,website,doc_url')
+        .is('embedding', null)
+        .range(from, from + 999);
+      if (error) {
+        console.error(`❌ Failed loading APIs: ${error.message}`);
+        process.exit(1);
+      }
+      if (!data || data.length === 0) break;
+      apis.push(...(data as ApiRow[]));
+      if (data.length < 1000) break;
+      from += 1000;
+    }
   }
-
-  const apis = (apisData ?? []) as ApiRow[];
   console.log(`📦 APIs missing embedding: ${apis.length}`);
 
   let apiDone = 0;
@@ -180,19 +185,26 @@ async function main() {
     });
   }
 
-  // ── Endpoints ───────────────────────────────────────────────────────────────
-  const { data: epData, error: epErr } = await supabase
-    .from('api_endpoints')
-    .select('id,api_id,method,path,summary,description,section')
-    .is('embedding', null)
-    .limit(endpointLimit);
-
-  if (epErr) {
-    console.error(`❌ Failed loading endpoints: ${epErr.message}`);
-    process.exit(1);
+  // ── Endpoints (paginated fetch) ─────────────────────────────────────────────
+  const endpoints: EndpointRow[] = [];
+  {
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('api_endpoints')
+        .select('id,api_id,method,path,summary,description,section')
+        .is('embedding', null)
+        .range(from, from + 999);
+      if (error) {
+        console.error(`❌ Failed loading endpoints: ${error.message}`);
+        process.exit(1);
+      }
+      if (!data || data.length === 0) break;
+      endpoints.push(...(data as EndpointRow[]));
+      if (data.length < 1000) break;
+      from += 1000;
+    }
   }
-
-  const endpoints = (epData ?? []) as EndpointRow[];
   console.log(`🧩 Endpoints missing embedding: ${endpoints.length}`);
 
   let epDone = 0;

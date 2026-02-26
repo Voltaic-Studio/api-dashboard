@@ -266,16 +266,24 @@ async function main() {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   console.log('📦 Loading APIs...');
-  const { data: apisData, error: apisErr } = await supabase
-    .from('apis')
-    .select('id,title,doc_url,website');
-
-  if (apisErr) {
-    console.error(`❌ Failed to load APIs: ${apisErr.message}`);
-    process.exit(1);
+  const apis: ApiRow[] = [];
+  {
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('apis')
+        .select('id,title,doc_url,website')
+        .range(from, from + 999);
+      if (error) {
+        console.error(`❌ Failed to load APIs: ${error.message}`);
+        process.exit(1);
+      }
+      if (!data || data.length === 0) break;
+      apis.push(...(data as ApiRow[]));
+      if (data.length < 1000) break;
+      from += 1000;
+    }
   }
-
-  const apis = (apisData ?? []) as ApiRow[];
   console.log(`📦 ${apis.length} APIs loaded\n`);
 
   const results: ValidationResult[] = [];

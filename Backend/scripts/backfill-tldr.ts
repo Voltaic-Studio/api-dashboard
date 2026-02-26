@@ -2,14 +2,10 @@
  * backfill-tldr.ts
  *
  * Backfills missing/short API TLDRs using OpenRouter.
+ * Processes ALL APIs in the database.
  *
  * Usage:
  *   cd Backend && pnpm run backfill:tldr
- *
- * Optional flags:
- *   --limit=500        Max APIs to process in this run
- *   --minLen=40        Treat TLDR shorter than this as missing
- *   --concurrency=4    Parallel requests
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -57,11 +53,20 @@ function createLimiter(concurrency: number) {
   };
 }
 
-function argNum(name: string, fallback: number): number {
-  const raw = process.argv.find(a => a.startsWith(`--${name}=`));
-  if (!raw) return fallback;
-  const n = Number(raw.split('=')[1]);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
+async function fetchAllApis(supabase: SupabaseClient): Promise<AnyApi[]> {
+  const all: AnyApi[] = [];
+  let from = 0;
+  while (true) {
+    const { data } = await supabase
+      .from('apis')
+      .select('id,title,description,tldr,website,doc_url')
+      .range(from, from + 999);
+    if (!data || data.length === 0) break;
+    all.push(...(data as AnyApi[]));
+    if (data.length < 1000) break;
+    from += 1000;
+  }
+  return all;
 }
 
 function sanitizeTldr(text: string): string {
@@ -143,25 +148,14 @@ async function main() {
     process.exit(1);
   }
 
-  const limitRows = argNum('limit', 10000);
-  const minLen = argNum('minLen', 40);
-  const concurrency = argNum('concurrency', 4);
+  const minLen = 40;
+  const concurrency = 4;
   const limiter = createLimiter(concurrency);
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   console.log('🧠 Loading APIs...');
-  const { data, error } = await supabase
-    .from('apis')
-    .select('id,title,description,tldr,website,doc_url')
-    .limit(limitRows);
-
-  if (error) {
-    console.error(`❌ Failed to load APIs: ${error.message}`);
-    process.exit(1);
-  }
-
-  const all = (data ?? []) as AnyApi[];
+  const all = await fetchAllApis(supabase);
   const targets = all.filter(a => !a.tldr || a.tldr.trim().length < minLen);
   console.log(`📊 APIs loaded: ${all.length}`);
   console.log(`🎯 APIs needing TLDR: ${targets.length} (minLen=${minLen})`);
