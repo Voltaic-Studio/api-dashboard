@@ -16,7 +16,9 @@
     "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
     "backfill:capabilities": "tsx scripts/backfill-capabilities.ts",
     "validate:doc-urls": "tsx scripts/validate-doc-urls.ts",
-    "seed:missing": "tsx scripts/seed-missing-apis.ts"
+    "seed:missing": "tsx scripts/seed-missing-apis.ts",
+    "replay:doc-urls": "tsx scripts/replay-doc-urls.ts",
+    "retry:doc-urls": "tsx scripts/retry-doc-urls.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
