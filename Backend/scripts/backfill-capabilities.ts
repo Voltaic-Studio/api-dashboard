@@ -164,10 +164,19 @@ const SYSTEM_PROMPT = `You are an API capabilities analyst. Your job is to list 
 CRITICAL RULES:
 1. Return STRICT JSON: {"capabilities":[{"title":"...","description":"...","domain":"..."}]}
 2. 4 to 12 capabilities max.
-3. "title" — short, specific product area (e.g. "Flight Search", "Webhooks", "Vertex Ai", "Google Maps").
-4. "description" — one short sentence explaining what the capability does.
+3. "title" — short, specific product area (e.g. "Payments", "Webhooks", "Vertex Ai", "Google Maps").
+4. "description" — one sentence explaining the capability. If you know specific features/methods/sub-features, append a "Supports: " list after the sentence. Only add "Supports: " when you can list concrete, specific items — omit it if you'd just be restating the title.
+   Example with Supports: "Accept and move money. Supports: cards, wallets (Apple Pay, Google Pay), bank transfers (ACH, SEPA, Bacs), local methods (iDEAL, Bancontact, Klarna, Afterpay), SCA / 3DS, one-off & saved payments."
+   Example without Supports: "Send transactional and marketing emails at scale."
 5. "domain" — ONLY set this when the capability is a well-known standalone product/sub-brand that has its own website domain (e.g. "maps.google.com", "stripe.com/connect"). Set to null otherwise. This is used to show the sub-brand's logo.
 6. No extra fields. No confidence, no evidence.
+
+IMPORTANT — THE MARKDOWN IS OFTEN INCOMPLETE:
+- The provided docs markdown is frequently truncated, missing pages, or only covers a fraction of the API's real capabilities.
+- You MUST use your training knowledge extensively. You likely know far more about this API than what the markdown shows.
+- Treat the markdown and endpoint hints as SUPPLEMENTARY context — not the full picture. If you know the API has capabilities not mentioned in the markdown, INCLUDE them.
+- DO NOT assume the markdown is comprehensive. Most APIs have many more features than what a single scraped page shows.
+- However, do NOT hallucinate capabilities that the API genuinely does not have.
 
 SUB-API / SUB-BRAND HANDLING:
 - Large platforms (AWS, Google Cloud, Azure, Meta, etc.) contain many independent sub-APIs. Each significant sub-API MUST appear as its own capability.
@@ -179,8 +188,7 @@ SUB-API / SUB-BRAND HANDLING:
 CATEGORIES:
 - Capabilities also serve as categories for the API. Think of them as "what can I do with this API?"
 - Cover the full breadth: if an API has payments, webhooks, subscriptions, reporting — list all of them.
-- Use your training knowledge freely. The hints and docs are supplementary — do NOT limit yourself to only what is listed there. If you know the API offers something not in the hints, include it.
-- However, do NOT hallucinate capabilities that the API genuinely does not have.`;
+- The "Supports: " line in the description is critical — it tells agents exactly what specific features are available without needing to read the full docs.`;
 
 async function llmGenerateCapabilities(
   orKey: string,
@@ -206,7 +214,7 @@ async function llmGenerateCapabilities(
       {
         model: 'google/gemini-2.5-flash',
         temperature: 0.1,
-        max_tokens: 2000,
+        max_tokens: 4000,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -227,7 +235,7 @@ async function llmGenerateCapabilities(
       .filter((x: any) => x?.title && x?.description)
       .map((x: any) => ({
         title: normalizeCapabilityTitle(String(x.title)),
-        description: compactSentence(String(x.description), 120),
+        description: compactSentence(String(x.description), 300),
         logo_url: x.domain && typeof x.domain === 'string' ? x.domain.trim() : null,
       }))
       .filter((x: Capability) => x.title.length > 1 && x.description.length > 8)
