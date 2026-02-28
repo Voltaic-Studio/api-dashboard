@@ -309,7 +309,7 @@ async function main() {
   while (true) {
     const { data, error } = await supabase
       .from('apis')
-      .select('id,title,description,tldr,website,doc_url')
+      .select('id,title,description,tldr,website,doc_url,capabilities')
       .range(from, from + 999);
     if (error) {
       console.error(`❌ Failed to load APIs: ${error.message}`);
@@ -322,11 +322,21 @@ async function main() {
   }
   console.log(`📦 APIs loaded: ${apis.length}`);
 
+  const needsCapabilities = apis.filter((a: any) => {
+    const caps = a.capabilities;
+    if (!caps) return true;
+    if (Array.isArray(caps) && caps.length === 0) return true;
+    return false;
+  });
+  const skipped = apis.length - needsCapabilities.length;
+  if (skipped > 0) console.log(`⏭️  Skipping ${skipped} APIs that already have capabilities`);
+  console.log(`🔄 Processing ${needsCapabilities.length} APIs...\n`);
+
   let done = 0;
   let ok = 0;
   let fail = 0;
 
-  await Promise.all(apis.map((api) => limiter(async () => {
+  await Promise.all(needsCapabilities.map((api) => limiter(async () => {
     try {
       const { data: endpointData } = await supabase
         .from('api_endpoints')
@@ -346,11 +356,11 @@ async function main() {
 
       ok++;
       done++;
-      console.log(`✅ [${done}/${apis.length}] ${api.id} — ${capabilities.length} capabilities`);
+      console.log(`✅ [${done}/${needsCapabilities.length}] ${api.id} — ${capabilities.length} capabilities`);
     } catch (err: any) {
       fail++;
       done++;
-      console.error(`❌ [${done}/${apis.length}] ${api.id} — ${err?.message ?? String(err)}`);
+      console.error(`❌ [${done}/${needsCapabilities.length}] ${api.id} — ${err?.message ?? String(err)}`);
     }
   })));
 

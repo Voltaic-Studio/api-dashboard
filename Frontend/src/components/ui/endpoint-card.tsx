@@ -75,10 +75,10 @@ export function EndpointCard({ endpoint, fallbackDocUrl }: EndpointCardProps) {
       </div>
 
       <div className="flex flex-col items-center gap-1 text-center">
-        <span className="text-xs leading-[18px] text-[var(--foreground)] font-normal">
+        <span className="text-sm leading-snug text-[var(--foreground)] font-normal">
           {endpoint.name}
         </span>
-        <span className="text-[10px] leading-[16.25px] text-[var(--foreground)]/60">
+        <span className="text-sm leading-relaxed text-[var(--foreground)]/60">
           {endpoint.description}
         </span>
       </div>
