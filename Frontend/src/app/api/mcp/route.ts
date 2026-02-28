@@ -213,15 +213,19 @@ async function searchApis(query: string, limit: number) {
       match_count: 120,
     });
     if (Array.isArray(hybrid) && hybrid.length > 0) {
-      apis = hybrid.map((r: any) => ({
-        id: r.id,
-        title: r.title,
-        description: r.description,
-        tldr: r.tldr ?? null,
-        website: r.website ?? null,
-        doc_url: r.doc_url ?? null,
-        logo: r.logo ?? null,
-      }));
+      const MIN_SCORE = 0.03;
+      const relevant = hybrid.filter((r: any) => (r.score ?? 0) >= MIN_SCORE);
+      if (relevant.length > 0) {
+        apis = relevant.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          tldr: r.tldr ?? null,
+          website: r.website ?? null,
+          doc_url: r.doc_url ?? null,
+          logo: r.logo ?? null,
+        }));
+      }
     }
   }
 
@@ -277,7 +281,7 @@ async function fetchJinaMarkdown(docUrl: string): Promise<string | null> {
     }
     const res = await fetch(jinaUrl, {
       headers,
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(20000),
     });
     if (!res.ok) return null;
     let md = await res.text();
@@ -288,11 +292,150 @@ async function fetchJinaMarkdown(docUrl: string): Promise<string | null> {
   }
 }
 
+async function fetchLlmsTxt(domain: string): Promise<string | null> {
+  const candidates = [
+    `https://${domain}/llms-full.txt`,
+    `https://${domain}/llms.txt`,
+    `https://docs.${domain}/llms-full.txt`,
+    `https://docs.${domain}/llms.txt`,
+  ];
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.length > 500 && !text.includes('<!DOCTYPE') && !text.includes('<html')) return text;
+    } catch { /* next */ }
+  }
+  return null;
+}
+
+async function fetchSitemapUrls(domain: string): Promise<string[]> {
+  const sitemapCandidates = [
+    `https://${domain}/sitemap.xml`,
+    `https://docs.${domain}/sitemap.xml`,
+    `https://developer.${domain}/sitemap.xml`,
+  ];
+  for (const url of sitemapCandidates) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      if (!xml.includes('<urlset') && !xml.includes('<sitemapindex')) continue;
+      const urls: string[] = [];
+      const locRegex = /<loc>\s*(.*?)\s*<\/loc>/g;
+      let match;
+      while ((match = locRegex.exec(xml)) !== null) urls.push(match[1]);
+      if (urls.length > 0) return urls;
+    } catch { /* next */ }
+  }
+  return [];
+}
+
+function filterApiDocUrls(urls: string[]): string[] {
+  const apiPatterns = [/\/api\//i, /\/reference/i, /\/docs\/api/i, /\/api-reference/i, /\/developer/i, /\/endpoints/i, /\/rest\//i, /\/graphql/i, /\/v[0-9]/i];
+  const excludePatterns = [/\/blog\//i, /\/pricing/i, /\/changelog/i, /\/status/i, /\/careers/i, /\/about/i, /\/legal/i, /\/terms/i, /\/privacy/i, /\.pdf$/i, /\.png$/i, /\.jpg$/i];
+  return urls.filter(url => {
+    if (excludePatterns.some(p => p.test(url))) return false;
+    return apiPatterns.some(p => p.test(url));
+  });
+}
+
+async function firecrawlMap(docUrl: string): Promise<string[]> {
+  const fcKey = process.env.FIRECRAWL_API_KEY;
+  if (!fcKey) return [];
+  try {
+    const res = await fetch('https://api.firecrawl.dev/v1/map', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${fcKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: docUrl, limit: 100 }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.links ?? [];
+  } catch { return []; }
+}
+
+async function llmPickDocPages(orKey: string, apiName: string, urls: string[]): Promise<string[]> {
+  if (urls.length <= 8) return urls;
+  const listing = urls.map((u, i) => `${i + 1}. ${u}`).join('\n');
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${orKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash', temperature: 0, max_tokens: 500,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: `I need the API reference pages for "${apiName}". Pick the 5-8 URLs most likely to contain actual API endpoint definitions (REST routes, methods, request/response specs). Skip overviews, tutorials, changelogs.\n\n${listing}\n\nReturn JSON: {"indices": [1, 5, 8]}` }],
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return urls.slice(0, 8);
+    const data = await res.json();
+    const raw = data?.choices?.[0]?.message?.content;
+    if (!raw) return urls.slice(0, 8);
+    const indices: number[] = JSON.parse(raw)?.indices ?? [];
+    const picked = indices.filter(i => i >= 1 && i <= urls.length).map(i => urls[i - 1]);
+    return picked.length > 0 ? picked.slice(0, 8) : urls.slice(0, 8);
+  } catch { return urls.slice(0, 8); }
+}
+
+async function discoverAndFetchDocs(apiId: string, docUrl: string | null, apiName: string): Promise<string | null> {
+  const redis = getRedis();
+  const cacheKey = `multipage:${apiId}`;
+  if (redis) {
+    try {
+      const cached = await redis.get<string>(cacheKey);
+      if (cached && typeof cached === 'string' && cached.length > 100) return cached;
+    } catch {}
+  }
+
+  const llmsTxt = await fetchLlmsTxt(apiId);
+  if (llmsTxt) {
+    if (redis) { try { await redis.set(cacheKey, llmsTxt, { ex: CACHE_TTL }); } catch {} }
+    return llmsTxt;
+  }
+
+  let apiDocUrls = filterApiDocUrls(await fetchSitemapUrls(apiId));
+
+  if (apiDocUrls.length === 0 && docUrl) {
+    const allUrls = await firecrawlMap(docUrl);
+    apiDocUrls = filterApiDocUrls(allUrls);
+    if (apiDocUrls.length === 0) apiDocUrls = allUrls.filter(u => /doc|api|ref|dev/i.test(u)).slice(0, 15);
+  }
+
+  if (apiDocUrls.length === 0) {
+    if (!docUrl) return null;
+    const md = await fetchJinaMarkdown(docUrl);
+    if (md && redis) { try { await redis.set(cacheKey, md, { ex: CACHE_TTL }); } catch {} }
+    return md;
+  }
+
+  const orKey = process.env.OPENROUTER_API_KEY;
+  const pagesToFetch = orKey ? await llmPickDocPages(orKey, apiName, apiDocUrls) : apiDocUrls.slice(0, 8);
+
+  const pages = await Promise.all(pagesToFetch.map(url => fetchJinaMarkdown(url)));
+  const combined = pages.filter((p): p is string => p !== null && p.length > 200).join('\n\n---\n\n');
+
+  if (!combined) {
+    if (!docUrl) return null;
+    const md = await fetchJinaMarkdown(docUrl);
+    if (md && redis) { try { await redis.set(cacheKey, md, { ex: CACHE_TTL }); } catch {} }
+    return md;
+  }
+
+  if (redis) { try { await redis.set(cacheKey, combined, { ex: CACHE_TTL }); } catch {} }
+  return combined;
+}
+
 async function llmExtractEndpoints(markdown: string, apiName: string): Promise<ExtractedEndpoint[]> {
   const orKey = process.env.OPENROUTER_API_KEY;
   if (!orKey) return [];
 
-  const prompt = `Extract ALL API endpoints from this documentation. For each endpoint provide:
+  const truncated = markdown.length > 80000 ? markdown.slice(0, 80000) : markdown;
+
+  const prompt = `Extract ALL API endpoints from this documentation. The documentation may come from multiple pages separated by "---". For each endpoint provide:
 - method: HTTP method (GET, POST, PUT, DELETE, PATCH)
 - path: the endpoint path (e.g. /v1/payments/{id})
 - summary: short name/title (e.g. "Create Payment")
@@ -302,28 +445,26 @@ async function llmExtractEndpoints(markdown: string, apiName: string): Promise<E
 - responses: object with status codes as keys and {description} as values
 
 If the page has NO actual API endpoints listed, return {"endpoints": []}.
+Deduplicate — if the same endpoint appears on multiple pages, include it only once.
 
 Return ONLY valid JSON: {"endpoints": [...]}
 
 API: ${apiName}
 Documentation:
-${markdown}`;
+${truncated}`;
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${orKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${orKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         temperature: 0,
-        max_tokens: 4000,
+        max_tokens: 8000,
         response_format: { type: 'json_object' },
         messages: [{ role: 'user', content: prompt }],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(60000),
     });
 
     if (!res.ok) return [];
@@ -350,7 +491,71 @@ ${markdown}`;
   }
 }
 
-async function getExtractedEndpoints(apiId: string, docUrl: string, apiName: string): Promise<ExtractedEndpoint[]> {
+type ApiEvaluation = {
+  purpose: string;
+  auth: { method: string; details: string };
+  pricing: { model: string; free_tier: boolean; details: string };
+  rate_limits: { description: string; recommendation: string };
+  sdks: string[];
+  gotchas: string[];
+  best_for: string;
+  alternatives: string[];
+};
+
+async function llmEvaluateApi(markdown: string, apiName: string, apiId: string): Promise<ApiEvaluation | null> {
+  const orKey = process.env.OPENROUTER_API_KEY;
+  if (!orKey) return null;
+
+  const truncated = markdown.length > 40000 ? markdown.slice(0, 40000) : markdown;
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${orKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        temperature: 0,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
+        messages: [{
+          role: 'user',
+          content: `You are an API integration expert. Analyze this API documentation AND use your training knowledge about "${apiName}" (${apiId}) to produce a concise integration guide for a coding agent.
+
+The documentation below may be incomplete. Supplement with what you know about this API from your training data — SDKs, pricing, common gotchas, rate limits, etc.
+
+Return JSON:
+{
+  "purpose": "One sentence: what this API does",
+  "auth": { "method": "e.g. Bearer token, API key, OAuth2", "details": "How to authenticate, where to get keys" },
+  "pricing": { "model": "e.g. per-request, per-seat, freemium", "free_tier": true/false, "details": "Key pricing info for a developer deciding whether to use this" },
+  "rate_limits": { "description": "Specific limits if known, otherwise 'Unknown'", "recommendation": "Concrete advice: e.g. 'Add 100ms delay between requests' or 'Use exponential backoff'" },
+  "sdks": ["List official SDK languages/packages, e.g. '@duffel/api (Node.js)', 'duffel-api (Python)'"],
+  "gotchas": ["Actionable warnings a developer MUST know before implementing. e.g. 'Offers expire after 30 minutes — cache and refresh', 'Sandbox and production use different API keys', 'Pagination is cursor-based, not offset-based'. Be specific and practical."],
+  "best_for": "One sentence: ideal use case",
+  "alternatives": ["2-4 competing APIs by domain, e.g. 'amadeus.com', 'kiwi.com'"]
+}
+
+Be concise but specific. Every gotcha should be actionable. Every field should help a coding agent make better implementation decisions.
+
+API: ${apiName} (${apiId})
+Documentation:
+${truncated}`,
+        }],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const raw = data?.choices?.[0]?.message?.content;
+    if (!raw) return null;
+    return JSON.parse(raw) as ApiEvaluation;
+  } catch {
+    return null;
+  }
+}
+
+async function getExtractedEndpoints(apiId: string, docUrl: string, apiName: string): Promise<{ endpoints: ExtractedEndpoint[]; markdown: string | null }> {
   const redis = getRedis();
   const cacheKey = `endpoints:${apiId}`;
 
@@ -359,13 +564,13 @@ async function getExtractedEndpoints(apiId: string, docUrl: string, apiName: str
       const cached = await redis.get<string>(cacheKey);
       if (cached) {
         const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached;
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return { endpoints: parsed, markdown: null };
       }
     } catch {}
   }
 
-  const markdown = await fetchJinaMarkdown(docUrl);
-  if (!markdown) return [];
+  const markdown = await discoverAndFetchDocs(apiId, docUrl, apiName);
+  if (!markdown) return { endpoints: [], markdown: null };
 
   const endpoints = await llmExtractEndpoints(markdown, apiName);
 
@@ -373,10 +578,36 @@ async function getExtractedEndpoints(apiId: string, docUrl: string, apiName: str
     try { await redis.set(cacheKey, JSON.stringify(endpoints), { ex: ENDPOINTS_CACHE_TTL }); } catch {}
   }
 
-  return endpoints;
+  return { endpoints, markdown };
 }
 
-async function getApiDetail(apiId: string) {
+async function getApiEvaluation(apiId: string, apiName: string, markdown: string | null, docUrl: string): Promise<ApiEvaluation | null> {
+  const redis = getRedis();
+  const cacheKey = `evaluate:${apiId}`;
+
+  if (redis) {
+    try {
+      const cached = await redis.get<string>(cacheKey);
+      if (cached) {
+        const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached;
+        if (parsed && typeof parsed === 'object') return parsed as ApiEvaluation;
+      }
+    } catch {}
+  }
+
+  const md = markdown ?? await discoverAndFetchDocs(apiId, docUrl, apiName);
+  if (!md) return null;
+
+  const evaluation = await llmEvaluateApi(md, apiName, apiId);
+
+  if (redis && evaluation) {
+    try { await redis.set(cacheKey, JSON.stringify(evaluation), { ex: CACHE_TTL }); } catch {}
+  }
+
+  return evaluation;
+}
+
+async function getApiDetail(apiId: string, directDocUrl?: string) {
   const supabase = createServerClient();
 
   const { data: apis } = await supabase
@@ -384,15 +615,19 @@ async function getApiDetail(apiId: string) {
     .select('*')
     .or(`id.eq.${apiId},id.like.${apiId}:%`);
 
-  if (!apis || apis.length === 0) return null;
+  const typedApis = (apis as AnyApi[] | null) ?? [];
+  const primary = typedApis.find((a) => a.id === apiId) ?? typedApis[0] ?? null;
+  const docUrl = directDocUrl
+    ?? typedApis.find((a) => a.doc_url)?.doc_url
+    ?? primary?.website
+    ?? (apiId.includes('.') ? `https://${apiId}` : null);
 
-  const typedApis = apis as AnyApi[];
-  const primary = typedApis.find((a) => a.id === apiId) ?? typedApis[0];
-  const docUrl = typedApis.find((a) => a.doc_url)?.doc_url ?? primary.website;
+  if (!docUrl) return null;
 
-  const endpoints = docUrl
-    ? await getExtractedEndpoints(apiId, docUrl, primary.title ?? apiId)
-    : [];
+  const apiName = primary?.title ?? apiId;
+  const { endpoints, markdown } = await getExtractedEndpoints(apiId, docUrl, apiName);
+
+  const evaluation = await getApiEvaluation(apiId, apiName, markdown, docUrl);
 
   const sections: Record<string, any[]> = {};
   for (const ep of endpoints) {
@@ -409,14 +644,31 @@ async function getApiDetail(apiId: string) {
   }
 
   return {
-    id: primary.id,
-    title: primary.title,
-    tldr: primary.tldr ?? primary.description,
-    website: primary.website,
+    id: primary?.id ?? apiId,
+    title: primary?.title ?? apiId,
+    tldr: primary?.tldr ?? primary?.description ?? evaluation?.purpose ?? null,
+    website: primary?.website ?? (apiId.includes('.') ? `https://${apiId}` : null),
     doc_url: docUrl,
+    ...(evaluation ? {
+      overview: {
+        purpose: evaluation.purpose,
+        auth: evaluation.auth,
+        pricing: evaluation.pricing,
+        rate_limits: evaluation.rate_limits,
+        sdks: evaluation.sdks,
+        gotchas: evaluation.gotchas,
+        best_for: evaluation.best_for,
+        alternatives: evaluation.alternatives,
+      },
+    } : {}),
     endpoint_count: endpoints.length,
     sections,
     live: true,
+    _agent_note: endpoints.length === 0
+      ? `No endpoints could be extracted automatically. Visit ${docUrl} directly to find the API reference.`
+      : endpoints.length < 10
+        ? `Only ${endpoints.length} endpoints were extracted. The full API may have more — check ${docUrl} for the complete reference.`
+        : undefined,
   };
 }
 
@@ -437,7 +689,7 @@ async function getEndpointInfo(apiId: string, method: string, pathQuery: string)
 
   if (!docUrl) return null;
 
-  const endpoints = await getExtractedEndpoints(apiId, docUrl, primary.title ?? apiId);
+  const { endpoints } = await getExtractedEndpoints(apiId, docUrl, primary.title ?? apiId);
   const match = endpoints.find(
     ep => ep.method === method.toUpperCase() && ep.path === pathQuery
   );
@@ -541,7 +793,7 @@ function jsonRpcError(id: any, code: number, message: string) {
 const TOOLS = [
   {
     name: 'search_apis',
-    description: 'Search for APIs by keyword. Returns matching APIs with title, description, and documentation URL. If no results are found in the database, automatically discovers APIs from the web via Exa search.',
+    description: 'Search for APIs by keyword. Returns matching APIs with title, description, and documentation URL. If no results are found in the database, automatically discovers APIs from the web via Exa search. This is the starting point — use it first to find APIs, then use the returned `id` with other tools.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -553,18 +805,19 @@ const TOOLS = [
   },
   {
     name: 'get_api_detail',
-    description: 'Get full details for a specific API including live-extracted endpoints with parameters, responses, and sections. Endpoints are fetched from official docs via Jina Reader and extracted by LLM. Results are cached for 14 days.',
+    description: 'Get full details for a specific API including live-extracted endpoints with parameters, responses, and sections. Endpoints are discovered from official docs across multiple pages and extracted by LLM. Results are cached for 14 days. Use the `id` returned by search_apis as the api_id. You can also pass a doc_url directly if you already have the documentation URL. Returns an overview with auth method, pricing, rate limits, SDKs, gotchas, and alternatives to help you make implementation decisions.',
     inputSchema: {
       type: 'object',
       properties: {
-        api_id: { type: 'string', description: 'The API identifier (domain, e.g. "stripe.com")' },
+        api_id: { type: 'string', description: 'The API identifier returned by search_apis (a domain, e.g. "stripe.com")' },
+        doc_url: { type: 'string', description: 'Optional: direct documentation URL to extract endpoints from. If provided, this URL is used instead of looking up the doc_url from the database. Useful when you already have an API docs link.' },
       },
       required: ['api_id'],
     },
   },
   {
     name: 'get_endpoint_info',
-    description: 'Get detailed information about a specific endpoint including parameters and response schema. Data is live-extracted from official docs and cached.',
+    description: 'Get detailed information about a specific endpoint including parameters and response schema. Data is live-extracted from official docs and cached. Use the method and path from get_api_detail results.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -577,7 +830,7 @@ const TOOLS = [
   },
   {
     name: 'get_live_docs',
-    description: 'Fetch live API documentation as raw markdown from the official docs page. Use this when you need the full unstructured documentation content. Results are cached for 14 days.',
+    description: 'Fetch live API documentation as raw markdown from the official docs page. Use this when you need the full unstructured documentation content beyond what get_api_detail provides. Results are cached for 14 days.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -602,6 +855,7 @@ export async function POST(req: Request) {
       protocolVersion: '2024-11-05',
       capabilities: { tools: {} },
       serverInfo: { name: 'apiflora', version: '1.0.0' },
+      instructions: 'This is your second brain for working with third-party APIs. Use it whenever you need to find, evaluate, or integrate any API. Workflows:\n\n1) DISCOVER: search_apis with a keyword (e.g. "flight booking", "payment processing") → returns matching APIs with IDs\n2) EXPLORE: get_api_detail with the returned id (a domain like "stripe.com") → returns all endpoints grouped by section\n3) DIRECT URL: If you already have a docs URL, pass it as doc_url to get_api_detail along with the domain as api_id → extracts endpoints directly from that URL\n4) DRILL DOWN: get_endpoint_info for specific endpoint parameters/responses\n5) RAW DOCS: get_live_docs for full unstructured documentation markdown\n\nThe api_id is always a domain (e.g. "stripe.com"). You can use get_api_detail even for APIs not in the database — just provide the domain as api_id and optionally a doc_url.',
     });
   }
 
@@ -626,7 +880,7 @@ export async function POST(req: Request) {
     }
 
     if (toolName === 'get_api_detail') {
-      const result = await getApiDetail(args.api_id ?? '');
+      const result = await getApiDetail(args.api_id ?? '', args.doc_url);
       if (!result) {
         return jsonRpcResponse(id, {
           content: [{ type: 'text', text: `API "${args.api_id}" not found.` }],
@@ -676,8 +930,8 @@ export async function GET() {
   return corsJson({
     name: 'apiflora',
     version: '1.0.0',
-    description: 'MCP server for searching and querying API documentation. Find any API, get endpoint details, parameters, and documentation links.',
+    description: 'API search engine for agents. Search 2000+ APIs, get live endpoint specs, parameters, and documentation. Use when you need to find or integrate any third-party API.',
     tools: TOOLS.map(t => t.name),
-    instructions: 'Add this MCP server to your agent config: { "mcpServers": { "apiflora": { "url": "https://apiflora.com/api/mcp" } } }',
+    instructions: 'Add this MCP server to your agent config: { "mcpServers": { "apiflora": { "url": "https://apiflora.com/api/mcp" } } }. Workflow: search_apis → get_api_detail → get_endpoint_info.',
   });
 }
