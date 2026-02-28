@@ -212,7 +212,7 @@ export default async function BrandPage({ params }: Props) {
                 <Image src="/white-arrow.png" alt="" width={14} height={14} />
               </a>
             )}
-            <CopyForAgentButton api={primary} endpoints={endpointList} docUrl={docUrl} />
+            <CopyForAgentButton api={primary} docUrl={docUrl} />
           </div>
         </div>
 

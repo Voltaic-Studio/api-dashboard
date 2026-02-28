@@ -27,6 +27,7 @@ type ApiRow = {
   tldr: string | null;
   website: string | null;
   doc_url: string | null;
+  capabilities: any[] | null;
 };
 
 type EndpointRow = {
@@ -100,14 +101,21 @@ async function embedTexts(orKey: string, model: string, texts: string[]): Promis
 }
 
 function apiText(a: ApiRow): string {
-  return [
+  const parts = [
     `API: ${a.title ?? a.id}`,
     `Domain: ${a.id}`,
     a.description ? `Description: ${a.description}` : '',
     a.tldr ? `TLDR: ${a.tldr}` : '',
-    a.website ? `Website: ${a.website}` : '',
-    a.doc_url ? `Docs: ${a.doc_url}` : '',
-  ].filter(Boolean).join('\n');
+  ];
+
+  if (Array.isArray(a.capabilities) && a.capabilities.length > 0) {
+    parts.push('Capabilities:');
+    for (const cap of a.capabilities) {
+      if (cap?.title) parts.push(`- ${cap.title}: ${cap.description ?? ''}`);
+    }
+  }
+
+  return parts.filter(Boolean).join('\n');
 }
 
 function endpointText(e: EndpointRow): string {
@@ -147,7 +155,7 @@ async function main() {
     while (true) {
       const { data, error } = await supabase
         .from('apis')
-        .select('id,title,description,tldr,website,doc_url')
+        .select('id,title,description,tldr,website,doc_url,capabilities')
         .is('embedding', null)
         .range(from, from + 999);
       if (error) {
