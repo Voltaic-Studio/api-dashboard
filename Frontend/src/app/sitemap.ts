@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select('id')
       .range(from, from + 999);
     if (!data || data.length === 0) break;
-    allIds.push(...data.map(a => a.id));
+    allIds.push(...(data as { id: string }[]).map(a => a.id));
     if (data.length < 1000) break;
     from += 1000;
   }

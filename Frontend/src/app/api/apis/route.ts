@@ -11,6 +11,28 @@ export interface Brand {
   api_count: number;
 }
 
+function groupByBrand(apis: Api[]): Brand[] {
+  const groups = new Map<string, Api[]>();
+
+  for (const api of apis) {
+    const base = api.id.split(':')[0];
+    if (!groups.has(base)) groups.set(base, []);
+    groups.get(base)!.push(api);
+  }
+
+  return Array.from(groups.entries()).map(([domain, entries]) => {
+    const primary = entries.find(e => e.id === domain) ?? entries[0];
+    return {
+      id: domain,
+      title: primary.title,
+      description: primary.description,
+      logo: entries.find(e => e.logo)?.logo ?? null,
+      website: primary.website,
+      api_count: entries.length,
+    };
+  });
+}
+
 async function embedQuery(query: string): Promise<number[] | null> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   const model = process.env.EMBEDDING_MODEL ?? 'openai/text-embedding-3-small';
@@ -35,28 +57,6 @@ async function embedQuery(query: string): Promise<number[] | null> {
   } catch {
     return null;
   }
-}
-
-function groupByBrand(apis: Api[]): Brand[] {
-  const groups = new Map<string, Api[]>();
-
-  for (const api of apis) {
-    const base = api.id.split(':')[0];
-    if (!groups.has(base)) groups.set(base, []);
-    groups.get(base)!.push(api);
-  }
-
-  return Array.from(groups.entries()).map(([domain, entries]) => {
-    const primary = entries.find(e => e.id === domain) ?? entries[0];
-    return {
-      id: domain,
-      title: primary.title,
-      description: primary.description,
-      logo: entries.find(e => e.logo)?.logo ?? null,
-      website: primary.website,
-      api_count: entries.length,
-    };
-  });
 }
 
 export async function GET(request: Request) {
