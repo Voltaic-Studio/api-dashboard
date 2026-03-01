@@ -19,6 +19,7 @@ export function SearchSection({ initialBrands, initialPage }: SearchSectionProps
   const [brands, setBrands]                   = useState<Brand[]>(initialBrands);
   const [resultCount, setResultCount]         = useState<number | null>(null);
   const [loading, setLoading]                 = useState(false);
+  const [copiedResults, setCopiedResults]     = useState(false);
   const [loadingMore, setLoadingMore]         = useState(false);
   const [nextPage, setNextPage]               = useState(initialPage + 1);
   const [hasMore, setHasMore]                 = useState(initialBrands.length === PAGE_SIZE);
@@ -65,6 +66,23 @@ export function SearchSection({ initialBrands, initialPage }: SearchSectionProps
     return brands.filter(b => matchesCategories(b, selectedCategories));
   }, [brands, selectedCategories]);
 
+  async function handleCopyResultsForAgent() {
+    const rows = filteredBrands;
+    const lines = [
+      `# API search results`,
+      '',
+      ...rows.map((b) => {
+        const description = b.description?.replace(/\n+/g, ' ').trim() || 'N/A';
+        const docUrl = (b as Brand & { doc_url?: string | null }).doc_url ?? b.website ?? 'N/A';
+        return `- **${b.id}** (${b.title})\n  - description: ${description}\n  - doc_url: ${docUrl}`;
+      }),
+    ];
+
+    await navigator.clipboard.writeText(lines.join('\n'));
+    setCopiedResults(true);
+    setTimeout(() => setCopiedResults(false), 1800);
+  }
+
   async function loadMore() {
     setLoadingMore(true);
     try {
@@ -82,22 +100,39 @@ export function SearchSection({ initialBrands, initialPage }: SearchSectionProps
 
   const isSearching = query.trim().length > 0;
   const displayCount = selectedCategories.length > 0 ? filteredBrands.length : resultCount;
+  const showStatusRow = loading || (displayCount !== null && (isSearching || selectedCategories.length > 0));
 
   return (
     <>
       <div className="mt-10 px-4">
         <SearchBar onSearch={setQuery} />
-        <div className={`transition-all duration-300 ${isSearching ? 'opacity-0 pointer-events-none h-0 mt-0' : 'opacity-100 h-auto mt-0'}`}>
-          <div className="flex items-center justify-center gap-3 mt-6">
+        <div className="mt-6 h-12 relative flex items-center justify-center">
+          <div className={`absolute inset-0 flex items-center justify-center gap-3 transition-opacity duration-300 ${isSearching ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <AgentInstructions />
             <CategoryFilter selected={selectedCategories} onChange={setSelectedCategories} />
           </div>
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${isSearching ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            {loading ? (
+              <div className="flex items-center gap-2 text-[var(--accent)]">
+                <span className="h-2.5 w-2.5 rounded-full bg-current animate-[pulse_900ms_ease-in-out_infinite]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-current animate-[pulse_900ms_ease-in-out_150ms_infinite]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-current animate-[pulse_900ms_ease-in-out_300ms_infinite]" />
+              </div>
+            ) : showStatusRow ? (
+              <div className="flex items-center gap-3 text-sm text-[var(--foreground)]/50 font-medium">
+                <span>{displayCount} result{displayCount !== 1 ? 's' : ''}</span>
+                {filteredBrands.length > 0 && (
+                  <button
+                    onClick={handleCopyResultsForAgent}
+                    className="cursor-pointer rounded-full px-3 py-1 text-xs font-medium bg-[var(--accent)] text-white hover:opacity-90 transition-opacity"
+                  >
+                    {copiedResults ? 'Copied!' : 'Copy results for agent'}
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
-        {displayCount !== null && (isSearching || selectedCategories.length > 0) && !loading && (
-          <p className="text-center text-sm text-[var(--foreground)]/50 mt-3 font-medium transition-opacity duration-200">
-            {displayCount} result{displayCount !== 1 ? 's' : ''}
-          </p>
-        )}
       </div>
 
       <ApiGrid brands={filteredBrands} loading={loading} query={query} />
