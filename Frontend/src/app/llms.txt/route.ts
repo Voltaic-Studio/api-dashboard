@@ -45,9 +45,9 @@ Add the MCP server to your configuration:
 \`\`\`
 
 Tools available:
-- search_apis(query) — Search for APIs by keyword
-- get_api_detail(api_id) — Get all endpoints with parameters
-- get_endpoint_info(api_id, method, path) — Get single endpoint detail
+- search_apis(query, limit?) — Search for APIs by keyword
+- get_api_detail(api_id, doc_url?, method?, path?) — Overview + light endpoints, or full detail for one endpoint when method/path are provided
+- get_live_docs(api_id, url?) — Fetch raw live docs markdown
 
 ## API Index
 

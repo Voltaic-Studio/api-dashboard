@@ -33,19 +33,35 @@ Verify it was added:
 claude mcp list
 \`\`\`
 
+### For Codex CLI
+Run this command in the terminal:
+
+\`\`\`bash
+codex mcp add apiflora --url ${DOMAIN}/api/mcp
+\`\`\`
+
+Verify it was added:
+\`\`\`bash
+codex mcp list
+\`\`\`
+
 ## Available Tools
 
 Once connected, you have access to:
 
-1. **search_apis**(query, limit?) — Search for APIs by keyword (e.g. "payments", "email", "weather"). Returns API names, descriptions, endpoint counts, and doc URLs.
+1. **search_apis**(query, limit?) — Search for APIs by keyword (e.g. "payments", "email", "weather"). Returns matching APIs with id, title, description, website, and doc_url.
 
-2. **get_api_detail**(api_id) — Get complete API reference for a specific API. Returns all endpoints grouped by section, with parameters, response schemas, and deep documentation links. The api_id is the domain (e.g. "stripe.com").
+2. **get_api_detail**(api_id, doc_url?, method?, path?) — Get API detail in two modes:
+   - Without method/path: overview (auth, pricing, rate limits, SDKs, gotchas, alternatives) + light endpoint list (method/path/summary only).
+   - With method/path: full detail for one endpoint, including parameters and responses.
 
-3. **get_endpoint_info**(api_id, method, path) — Get detailed info for a single endpoint including all parameters with types/descriptions and response schema.
+3. **get_live_docs**(api_id, url?) — Fetch raw live documentation markdown from the docs page.
 
 ## Usage Pattern
 
-Always call search_apis first to discover available APIs, then get_api_detail for the one you need to implement. Use get_endpoint_info for specific endpoint details when implementing individual API calls.`;
+Always call search_apis first to discover APIs, then get_api_detail for the chosen API.
+Use get_api_detail with method+path when you need full detail for one endpoint.
+Use get_live_docs only when you need full raw markdown from docs.`;
 
 export function AgentInstructions() {
   const [copied, setCopied] = useState(false);

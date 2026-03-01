@@ -1,5 +1,13 @@
-import { createServerClient } from '@/lib/supabase';
+import { groupApisByBrand, searchIndexedApis } from '@/lib/api-search';
 import { getRedis, type AnyApi, type DiscoveredApi } from './utils';
+
+type ExaResult = {
+  url: string;
+  title?: string | null;
+  summary?: string | null;
+  text?: string | null;
+  highlights?: string[] | null;
+};
 
 export async function exaDiscoverApis(query: string, limit: number): Promise<DiscoveredApi[]> {
   const exaKey = process.env.EXA_API_KEY;
@@ -37,12 +45,12 @@ export async function exaDiscoverApis(query: string, limit: number): Promise<Dis
 
     if (!res.ok) return [];
     const data = await res.json();
-    const results = data?.results ?? [];
+    const results: ExaResult[] = Array.isArray(data?.results) ? data.results : [];
     if (results.length === 0) return [];
 
     const orKey = process.env.OPENROUTER_API_KEY;
     if (!orKey) {
-      return results.slice(0, limit).map((r: any) => ({
+      return results.slice(0, limit).map((r) => ({
         id: new URL(r.url).hostname,
         title: r.title ?? new URL(r.url).hostname,
         description: r.summary ?? r.text ?? '',
@@ -51,7 +59,7 @@ export async function exaDiscoverApis(query: string, limit: number): Promise<Dis
       }));
     }
 
-    const listing = results.map((r: any, i: number) => {
+    const listing = results.map((r, i: number) => {
       const highlights = Array.isArray(r.highlights) ? r.highlights.join(' ') : '';
       return [
         `${i + 1}. URL: ${r.url}`,
@@ -126,67 +134,12 @@ Rank by relevance to the query. Only include results that are genuine API/develo
 }
 
 export async function searchApis(query: string, limit: number) {
-  const supabase = createServerClient();
   const max = Math.min(limit, 50);
   const q = query.trim();
   if (!q) return { count: 0, apis: [] };
 
-  async function embedQuery(text: string): Promise<number[] | null> {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    const model = process.env.EMBEDDING_MODEL ?? 'openai/text-embedding-3-small';
-    if (!apiKey || text.length < 3) return null;
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/embeddings', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, input: text }),
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data?.data?.[0]?.embedding ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  let apis: AnyApi[] | null = null;
-
-  const queryEmbedding = await embedQuery(q);
-  if (queryEmbedding) {
-    const rpc = supabase as any;
-    const { data: hybrid } = await rpc.rpc('search_apis_hybrid', {
-      query_text: q,
-      query_embedding: queryEmbedding,
-      match_count: 120,
-    });
-    if (Array.isArray(hybrid) && hybrid.length > 0) {
-      apis = hybrid.map((r: any) => ({
-        id: r.id,
-        title: r.title,
-        description: r.description,
-        tldr: r.tldr ?? null,
-        website: r.website ?? null,
-        doc_url: r.doc_url ?? null,
-        logo: r.logo ?? null,
-      }));
-    }
-  }
-
-  if (!apis) {
-    const words = q.split(/\s+/).filter(Boolean);
-    const conditions = words
-      .map(w => `title.ilike.%${w}%,description.ilike.%${w}%,id.ilike.%${w}%,tldr.ilike.%${w}%`)
-      .join(',');
-    const { data } = await supabase
-      .from('apis')
-      .select('id, title, description, tldr, website, doc_url, logo')
-      .or(conditions)
-      .limit(200);
-    apis = (data as AnyApi[] | null) ?? [];
-  }
-
-  if (!apis || apis.length === 0) {
+  const indexed = await searchIndexedApis(q, max);
+  if (!indexed.apis || indexed.apis.length === 0) {
     const discovered = await exaDiscoverApis(q, max);
     if (discovered.length > 0) {
       return { count: discovered.length, apis: discovered, source: 'discovered' };
@@ -194,23 +147,15 @@ export async function searchApis(query: string, limit: number) {
     return { count: 0, apis: [] };
   }
 
-  const grouped = new Map<string, AnyApi[]>();
-  for (const api of apis as AnyApi[]) {
-    const base = api.id.split(':')[0];
-    if (!grouped.has(base)) grouped.set(base, []);
-    grouped.get(base)!.push(api);
-  }
-
-  const brands = Array.from(grouped.entries()).slice(0, max).map(([domain, entries]) => {
-    const primary = entries.find((e: AnyApi) => e.id === domain) ?? entries[0];
-    return {
-      id: domain,
-      title: primary.title,
-      description: primary.tldr ?? primary.description,
-      website: primary.website,
-      doc_url: entries.find((e: AnyApi) => e.doc_url)?.doc_url ?? primary.website,
-    };
-  });
+  const brands = groupApisByBrand(indexed.apis as AnyApi[])
+    .slice(0, max)
+    .map((brand) => ({
+      id: brand.id,
+      title: brand.title,
+      description: brand.description,
+      website: brand.website,
+      doc_url: brand.doc_url,
+    }));
 
   return { count: brands.length, apis: brands };
 }
