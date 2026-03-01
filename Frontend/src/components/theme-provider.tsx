@@ -10,7 +10,7 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'system',
+  theme: 'light',
   setTheme: () => {},
 });
 
@@ -32,16 +32,16 @@ function applyClass(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeRaw] = useState<Theme>('system');
+  const [theme, setThemeRaw] = useState<Theme>('light');
 
   useEffect(() => {
-    const stored = (localStorage.getItem('theme') as Theme) || 'system';
+    const stored = (localStorage.getItem('theme') as Theme) || 'light';
     setThemeRaw(stored);
     applyClass(stored);
 
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = () => {
-      const current = (localStorage.getItem('theme') as Theme) || 'system';
+      const current = (localStorage.getItem('theme') as Theme) || 'light';
       if (current === 'system') applyClass('system');
     };
     mq.addEventListener('change', onChange);
