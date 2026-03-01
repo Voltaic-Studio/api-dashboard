@@ -72,9 +72,8 @@ export function SearchSection({ initialBrands, initialPage }: SearchSectionProps
       `# API search results`,
       '',
       ...rows.map((b) => {
-        const description = b.description?.replace(/\n+/g, ' ').trim() || 'N/A';
         const docUrl = (b as Brand & { doc_url?: string | null }).doc_url ?? b.website ?? 'N/A';
-        return `- **${b.id}** (${b.title})\n  - description: ${description}\n  - doc_url: ${docUrl}`;
+        return `- **${b.id}** (${b.title}): ${docUrl}`;
       }),
     ];
 
