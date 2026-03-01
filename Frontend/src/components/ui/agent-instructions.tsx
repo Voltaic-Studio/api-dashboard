@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-const DOMAIN = 'https://apiflora.com';
+const DOMAIN = 'https://apiflora.dev';
 
 const AGENT_PROMPT = `You are a coding agent. Add the ApiFlora API search MCP server to your tools so you can search and query any API documentation.
 

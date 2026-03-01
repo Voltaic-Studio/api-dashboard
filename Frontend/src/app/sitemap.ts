@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const base = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
-    : 'https://apiflora.com';
+    : 'https://apiflora.dev';
 
   const entries: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: 'daily', priority: 1 },

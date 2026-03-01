@@ -29,7 +29,7 @@ export async function GET() {
   let content = `# ApiFlora — API Search Engine for Agents
 
 > Find any API documentation, endpoints, and parameters in one place.
-> MCP Server: https://apiflora.com/api/mcp
+> MCP Server: https://apiflora.dev/api/mcp
 
 ## How to use (for AI agents)
 
@@ -38,7 +38,7 @@ Add the MCP server to your configuration:
 {
   "mcpServers": {
     "apiflora": {
-      "url": "https://apiflora.com/api/mcp"
+      "url": "https://apiflora.dev/api/mcp"
     }
   }
 }
@@ -59,7 +59,7 @@ Tools available:
     const desc = api.tldr ?? api.description ?? '';
     const url = api.doc_url ?? api.website ?? '';
     const domain = api.id.split(':')[0];
-    content += `- [${api.title}](https://apiflora.com/brand/${encodeURIComponent(domain)})`;
+    content += `- [${api.title}](https://apiflora.dev/brand/${encodeURIComponent(domain)})`;
     if (desc) content += `: ${desc.slice(0, 150).replace(/\n/g, ' ')}`;
     if (url) content += ` | Docs: ${url}`;
     content += `\n`;

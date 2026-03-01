@@ -136,6 +136,6 @@ export async function GET() {
     version: '1.0.0',
     description: 'Your second brain for third-party APIs. Search 2000+ APIs, get live endpoint specs with auth/pricing/rate-limits/gotchas, or pass any docs URL to extract endpoints instantly.',
     tools: TOOLS.map(t => t.name),
-    instructions: 'Add this MCP server to your agent config: { "mcpServers": { "apiflora": { "url": "https://apiflora.com/api/mcp" } } }. Workflow: search_apis → get_api_detail (returns everything) → get_api_detail with method/path (drill down).',
+    instructions: 'Add this MCP server to your agent config: { "mcpServers": { "apiflora": { "url": "https://apiflora.dev/api/mcp" } } }. Workflow: search_apis → get_api_detail (returns everything) → get_api_detail with method/path (drill down).',
   });
 }
