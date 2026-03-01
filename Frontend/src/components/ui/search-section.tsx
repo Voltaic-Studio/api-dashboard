@@ -68,11 +68,16 @@ export function SearchSection({ initialBrands, initialPage }: SearchSectionProps
 
   async function handleCopyResultsForAgent() {
     const rows = filteredBrands;
+    const verbose = rows.length < 10;
     const lines = [
       `# API search results`,
       '',
       ...rows.map((b) => {
         const docUrl = (b as Brand & { doc_url?: string | null }).doc_url ?? b.website ?? 'N/A';
+        if (verbose) {
+          const description = b.description?.replace(/\n+/g, ' ').trim() || 'N/A';
+          return `- **${b.id}** (${b.title}): ${docUrl}\n  ${description}`;
+        }
         return `- **${b.id}** (${b.title}): ${docUrl}`;
       }),
     ];
