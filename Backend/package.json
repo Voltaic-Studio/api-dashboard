@@ -13,6 +13,7 @@
     "scrape:pricing": "tsx scripts/scrape-pricing.ts",
     "cleanup": "tsx scripts/cleanup-apis.ts",
     "backfill:tldr": "tsx scripts/backfill-tldr.ts",
+    "backfill:summaries": "tsx scripts/backfill-summaries.ts",
     "backfill:embeddings": "tsx scripts/backfill-embeddings.ts",
     "backfill:capabilities": "tsx scripts/backfill-capabilities.ts",
     "validate:doc-urls": "tsx scripts/validate-doc-urls.ts",

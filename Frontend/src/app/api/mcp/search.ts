@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase';
-import { getRedis, MIN_HYBRID_SCORE, type AnyApi, type DiscoveredApi } from './utils';
+import { getRedis, type AnyApi, type DiscoveredApi } from './utils';
 
 export async function exaDiscoverApis(query: string, limit: number): Promise<DiscoveredApi[]> {
   const exaKey = process.env.EXA_API_KEY;
@@ -161,18 +161,15 @@ export async function searchApis(query: string, limit: number) {
       match_count: 120,
     });
     if (Array.isArray(hybrid) && hybrid.length > 0) {
-      const relevant = hybrid.filter((r: any) => (r.score ?? 0) >= MIN_HYBRID_SCORE);
-      if (relevant.length > 0) {
-        apis = relevant.map((r: any) => ({
-          id: r.id,
-          title: r.title,
-          description: r.description,
-          tldr: r.tldr ?? null,
-          website: r.website ?? null,
-          doc_url: r.doc_url ?? null,
-          logo: r.logo ?? null,
-        }));
-      }
+      apis = hybrid.map((r: any) => ({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        tldr: r.tldr ?? null,
+        website: r.website ?? null,
+        doc_url: r.doc_url ?? null,
+        logo: r.logo ?? null,
+      }));
     }
   }
 
