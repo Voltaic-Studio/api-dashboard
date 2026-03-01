@@ -71,6 +71,18 @@ export default async function PaginatedPage({ params }: Props) {
       </section>
 
       <SearchSection initialBrands={brands} initialPage={pageNum} />
+
+      <footer className="px-4 pb-12 text-center text-sm text-[var(--foreground)]/55">
+        Made with ❤️ by{' '}
+        <a
+          href="https://x.com/giginotmario"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium underline decoration-[var(--foreground)]/35 underline-offset-4 hover:text-[var(--accent)] hover:decoration-[var(--accent)] transition-colors"
+        >
+          @giginotmario
+        </a>
+      </footer>
     </main>
   );
 }

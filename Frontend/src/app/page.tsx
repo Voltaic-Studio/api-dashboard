@@ -66,6 +66,18 @@ export default async function Home() {
       </section>
 
       <SearchSection initialBrands={initialBrands} initialPage={1} />
+
+      <footer className="px-4 pb-12 text-center text-sm text-[var(--foreground)]/55">
+        Made with ❤️ by{' '}
+        <a
+          href="https://x.com/giginotmario"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium underline decoration-[var(--foreground)]/35 underline-offset-4 hover:text-[var(--accent)] hover:decoration-[var(--accent)] transition-colors"
+        >
+          @giginotmario
+        </a>
+      </footer>
     </main>
   );
 }
